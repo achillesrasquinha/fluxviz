@@ -1,8 +1,11 @@
 # imports - standard imports
 import subprocess as sp
 
-class fluxvizError(Exception):
+class FluxVizError(Exception):
     pass
 
-class PopenError(fluxvizError, sp.CalledProcessError):
+class PopenError(FluxVizError, sp.CalledProcessError):
+    pass
+
+class TemplateNotFoundError(FluxVizError):
     pass
