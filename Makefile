@@ -155,14 +155,21 @@ ifneq (${VERBOSE},true)
 	$(eval OUT = > /dev/null)
 endif
 
+	$(call log,INFO,Building Notebooks)
+	@find $(DOCSDIR)/source/notebooks -type f -name '*.ipynb' -not -path "*/.ipynb_checkpoints/*" | \
+		xargs $(JUPYTER) nbconvert \
+			--to notebook 		\
+			--inplace 			\
+			--execute 			\
+			--ExecutePreprocessor.timeout=300
+
 	$(call log,INFO,Building Documentation)
 	$(SPHINXBUILD) $(DOCSDIR)/source $(DOCSDIR)/build $(OUT)
 
-	$(call log,SUCCESS,Building Documentation Successful)
+	$(call log,INFO,Cleaning Up...)
+	$(PYTHON) scripts/delete-models.py
 
-ifeq (${launch},true)
-	$(call browse,file:///${DOCSDIR}/build/index.html)
-endif
+	$(call log,SUCCESS,Building Documentation Successful)
 
 docker-build: clean ## Build the Docker Image.
 	$(call log,INFO,Building Docker Image)

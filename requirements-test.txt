@@ -1,4 +1,5 @@
-pytest
+scipy
+cobrapytest
 pytest-cov
 pytest-xdist
 pytest-sugar

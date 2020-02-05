@@ -4,20 +4,79 @@ require.config({
         ccNetViz:           "ccNetViz",
         Combinatorics:      "https://cdn.jsdelivr.net/npm/js-combinatorics@0.5.5/combinatorics.min",
         randomColor:        "https://cdnjs.cloudflare.com/ajax/libs/randomcolor/0.5.4/randomColor.min",
+        deepmerge:          "https://unpkg.com/deepmerge@4.2.2/dist/umd"
     }
 });
 
 require([
     "ccNetViz",
     "Combinatorics",
-    "randomColor"
+    "randomColor",
+    "deepmerge"
 ], function (
     ccNetViz,
     Combinatorics,
     randomColor,
+    deepmerge
 ) {
+    var CANVAS_ID   = "fluxviz-graph";
+    var TOOLTIP_ID  = "fluxviz-tooltip"; 
+
     function flatten (arr) {
         return [].concat.apply([], arr);
+    }
+
+    var DEFAULT_TOOLTIP_OPTIONS = {
+        style: {
+            position:               "absolute",
+            maxWidth:               "256px",
+            backgroundColor:        "#FFF",
+            borderRadius:           ".3rem",
+            border:                 "1px solid rgba(0,0,0,0.2)",
+            zIndex:                 99
+        },
+        headerStyle: {
+            padding:                ".5rem .75rem",
+            fontSize:               "1rem",
+            backgroundColor:        "#F7F7F7",
+            borderBottom:           "1px solid #EBEBEB",
+            borderTopLeftRadius:    "calc(.3rem - 1px)",
+            borderTopRightRadius:   "calc(.3rem - 1px)"
+        }
+    };
+
+    function tooltip (options) {
+        options = deepmerge(DEFAULT_TOOLTIP_OPTIONS, options);
+
+        var element = document.getElementById(TOOLTIP_ID);
+        if ( !element ) {
+            var element     = document.createElement("div");
+            element.setAttribute("id", TOOLTIP_ID);
+        
+            document.body.appendChild(element);
+
+            var header      = document.createElement("div");
+            header.setAttribute("id", TOOLTIP_ID + "-header");
+
+            element.appendChild(header);
+        };
+
+        element.style.display = options.show ? "block" : "none";
+        
+        if ( options.style ) {
+            for ( const type in options.style ) {
+                element.style[type] = options.style[type];
+            }
+        }
+
+        var header       = document.getElementById(TOOLTIP_ID + "-header");
+        header.innerHTML = "<h3>" + options.title + "</h3>"
+    
+        if ( options.headerStyle ) {
+            for ( const type in options.headerStyle ) {
+                header.style[type] = options.style[type];
+            }
+        }
     }
 
     function _patch_model (model) {
@@ -30,8 +89,9 @@ require([
                 compartments.push(metabolite.compartment);
             }
             
-            reaction.subsystems        = [reaction.subsystem];
-            // reaction.subsystems     = reaction.subsystem.split(", ");
+            reaction.reversible         = reaction.lower_bound < 0 && reaction.upper_bound > 0; 
+            reaction.subsystems         = [reaction.subsystem];
+            // reaction.subsystems      = reaction.subsystem.split(", ");
 
             reaction.compartments   = compartments;
         }
@@ -61,6 +121,11 @@ require([
 
             model.compartments[compartment] = { name: name,
                 n_metabolites: n_metabolites, subsystems: subsystems };
+
+            var foobar = compartments
+                .map(function (c) {
+
+                })
         }
 
         // Find Densities...
@@ -117,29 +182,73 @@ require([
 
                 return { name: subsystem, n_reactions: n_reactions,
                     metabolites: metabolites };
-            })
+            });
+
+        // Find Densities
+        var max_reactions = Math.max.apply(null,
+            subsystems
+                .map(function (subsystem) {
+                    return subsystem.n_reactions
+                })
+        );
+
+        for ( const subsystem of subsystems ) {
+            var reaction_density        = subsystem.n_reactions / max_reactions;
+            subsystem.reaction_density  = reaction_density;
+        }
 
         model.subsystems = subsystems;
 
         console.log("Model Patched.");
     }
 
-    function main (model) {
+    function getSubGraphOnEvent (graph, e) {
+        var element = document.getElementById(CANVAS_ID);
+        
+        var boundingBox = element.getBoundingClientRect();
+
+        var x           = e.clientX - boundingBox.left;
+        var y           = e.clientY - boundingBox.top;
+        var radius      = 5;
+
+        var layerCoordinates = graph.getLayerCoords({ x: x, y: y, radius: radius });
+
+        var result           = graph.find(
+            layerCoordinates.x,
+            layerCoordinates.y,
+            layerCoordinates.radius,
+            true,
+            true
+        );
+
+        return result;
+    }
+
+    const main = model => {
         _patch_model(model);
 
         console.log("Patched Model: ");
         console.log(model);
 
-        var ASPECT_RATIO    = 16 / 9;
+        const ASPECT_RATIO    = 16 / 9;
 
-        var width           = 1024;
-        var height          = width / ASPECT_RATIO;
+        const width           = 1024;
+        const height          = width / ASPECT_RATIO;
         
-        var element         = document.getElementById("graph");
-        element.width       = width;
-        element.height      = height;
+        const element         = document.getElementById(CANVAS_ID);
+        element.width         = width;
+        element.height        = height;
 
-        var compartments    = Object.keys(model.compartments);
+        const compartments    = Object.keys(model.compartments);
+
+        const colors          = { };
+        function get_color (type) {
+            if ( !(type in colors) ) {
+                colors[type] = randomColor({ format: "rgb" });
+            }
+
+            return colors[type];
+        }
 
         var styles          = { };
         styles              = Object.assign({ }, styles, 
@@ -147,8 +256,8 @@ require([
                 var compartment = model.compartments[next];
 
                 var style   = {
-                    size:   compartment.metabolite_density * 15 + 10,
-                    color:  randomColor({ format: "rgb" })
+                    size:   compartment.metabolite_density * 15 + 15,
+                    color:  get_color("compartment")
                 };
 
                 var key     = "compartment-" + next;
@@ -159,7 +268,8 @@ require([
             }, { }),
             model.subsystems.reduce(function (prev, next) {
                 var style   = {
-                    color:  randomColor({ format: "rgb" })
+                    size:   next.reaction_density * 15 + 15,
+                    color:  get_color("subsystem")
                 };
 
                 var key     = "subsystem-" + next.name;
@@ -176,16 +286,15 @@ require([
                     node: {
                         texture: "images/circle.png",
                         label: {
-                            hideSize: 16
+                            hideSize: 6
                         },
-                        color: randomColor({
-                            format: "rgb"
-                        })
+                        color: get_color("node")
                     },
                     edges: {
                         arrow: {
                             texture: "images/arrow.png"
-                        }
+                        },
+                        hideSize: 2
                     },
                 },
                 styles
@@ -199,7 +308,8 @@ require([
 
             var nodes       = model.metabolites
                 .map(function (m) {
-                    var node = { label: m.name };
+                    var type = { "name": "metabolite", "label": "Metabolite" };
+                    var node = { label: m.name, type: type };
 
                     return node;
                 });
@@ -217,8 +327,10 @@ require([
                                 var node = { label: m.name };
                                 return node;
                             })
-
+                        
+                        var type        = { "name": "subsystem", "label": "Sub System" };
                         var node        = { label: subsystem.name,
+                            type: type,
                             style: "subsystem-" + subsystem.name,
                             nodes: metabolites, edges: [ ] };
 
@@ -226,9 +338,10 @@ require([
                     });
             }
 
+            var type        = { "name": "compartment", "label": "Compartment" };
             var node        = { label: compartment.name,
                 style: "compartment-" + next, 
-                nodes: nodes, edges: edges };
+                nodes: nodes, edges: edges, type: type };
 
             return Object.assign({ }, prev, { [next]: node });
         }, { });
@@ -244,10 +357,8 @@ require([
                 for ( const reaction of reactions ) {
                     var compartments = reaction.compartments;
                     
-                    if ( compartments.includes(a) ) {
-                        if ( compartments.includes(b) ) {
-                            c = { from: a, to: b, connected: true };
-                        }
+                    if ( compartments.includes(a) && compartments.includes(b) ) {
+                        c = { from: a, to: b, connected: true };
                     }
                 }
 
@@ -268,22 +379,37 @@ require([
         });
         
         element.addEventListener("mousemove", function (e) {
-            var boundingBox = element.getBoundingClientRect();
+            var target    = getSubGraphOnEvent(graph, e);
+            var targets   = target.nodes.length ? target.nodes : target.edges;
+            
+            if ( targets.length ) {
+                var object = targets.reduce(function (prev, next) {
+                    return prev.dist < next.dist ? prev : next;
+                });
+    
+                console.log("On Mouse Move: ");
+                console.log(object);
+                
+                var title = object.node ? object.node.label : "edge";
 
-            var x           = e.clientX - boundingBox.left;
-            var y           = e.clientY - boundingBox.top;
-            var radius      = 5;
-
-            var layerCoordinates = graph.getLayerCoords({ x: x, y: y, radius: radius });
-
-            var result           = graph.find(
-                layerCoordinates.x,
-                layerCoordinates.y,
-                layerCoordinates.radius,
-                true,
-                true
-            );
+                tooltip({
+                    title:  title,
+                    show:   true,
+                    style: {
+                        left: (e.clientX - 10) + "px",
+                        top:  (e.clientY + 25) + "px"
+                    }
+                })
+            } else {
+                tooltip({ show: false });
+            }
         });
+
+        console.log("Graph: ");
+        console.log("Nodes: ");
+        console.log(nodes);
+        console.log("Edges: ");
+        console.log(edges);
     };
 
     console.log("Rendering Model: ");

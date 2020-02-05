@@ -58,12 +58,6 @@ def render_template(template, dirs = [ ], context = None, **kwargs):
         context  = kwargs
 
     if context:
-        for name, item in iteritems(context):
-            item = str(item)
-            item = cgi.escape(item)
-            
-            context[name] = item
-
         template = Template(string)
         rendered = template.substitute(context)
     
