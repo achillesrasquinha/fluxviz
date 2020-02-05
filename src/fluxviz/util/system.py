@@ -5,6 +5,7 @@ from fluxviz._compat import iteritems
 import os, os.path as osp
 import errno
 import platform
+import shutil
 import subprocess  as sp
 from   distutils.spawn import find_executable
 
@@ -115,3 +116,21 @@ def touch(filename):
     if not osp.exists(filename):
         with open(filename, "w") as f:
             pass
+
+def remove(path, recursive = False, raise_err = True):
+    path = osp.realpath(path)
+
+    if osp.isdir(path):
+        if recursive:
+            shutil.rmtree(path)
+        else:
+            if raise_err:
+                raise OSError("{path} is a directory.".format(
+                    path = path
+                ))
+    else:
+        try:
+            os.remove(path)
+        except OSError:
+            if raise_err:
+                raise
