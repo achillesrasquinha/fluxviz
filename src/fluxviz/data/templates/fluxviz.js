@@ -19,12 +19,10 @@ require([
     randomColor,
     deepmerge
 ) {
-    var CANVAS_ID   = "fluxviz-graph";
-    var TOOLTIP_ID  = "fluxviz-tooltip"; 
+    var CANVAS_ID   = "fluxviz-$id-graph";
+    var TOOLTIP_ID  = "fluxviz-$id-tooltip";
 
-    function flatten (arr) {
-        return [].concat.apply([], arr);
-    }
+    const flatten   = arr => [].concat.apply([], arr);
 
     var DEFAULT_TOOLTIP_OPTIONS = {
         style: {
@@ -88,6 +86,15 @@ require([
                 var metabolite = model.metabolites.find(function (m) { return m.id == reaction_metabolite });
                 compartments.push(metabolite.compartment);
             }
+
+            reaction.stoichiometry      = reaction.metabolites;
+            
+            reaction.metabolites        = Object.keys(reaction.stoichiometry);
+            
+            reaction.reactants          = Object.keys(reaction.stoichiometry)
+                .filter(m => reaction.stoichiometry[m] < 0)
+            reaction.products           = Object.keys(reaction.stoichiometry)
+                .filter(m => reaction.stoichiometry[m] > 0);
             
             reaction.reversible         = reaction.lower_bound < 0 && reaction.upper_bound > 0; 
             reaction.subsystems         = [reaction.subsystem];
@@ -162,13 +169,12 @@ require([
                     .filter(function (r) {
                         return r.subsystems.includes(subsystem);
                     })
-                var n_reactions = reactions.length;
                 var metabolites = Array.from(
                     new Set(
                         flatten(
                             reactions
                                 .map(function (r) {
-                                    return Object.keys(r.metabolites)
+                                    return r.metabolites
                                 })
                         )
                     )
@@ -180,20 +186,20 @@ require([
                     return metabolite;
                 });
 
-                return { name: subsystem, n_reactions: n_reactions,
-                    metabolites: metabolites };
+                return { name: subsystem, 
+                    metabolites: metabolites, reactions: reactions };
             });
 
         // Find Densities
         var max_reactions = Math.max.apply(null,
             subsystems
                 .map(function (subsystem) {
-                    return subsystem.n_reactions
+                    return subsystem.reactions.length
                 })
         );
 
         for ( const subsystem of subsystems ) {
-            var reaction_density        = subsystem.n_reactions / max_reactions;
+            var reaction_density        = subsystem.reactions.length / max_reactions;
             subsystem.reaction_density  = reaction_density;
         }
 
@@ -306,14 +312,8 @@ require([
         var nodes           = compartments.reduce(function (prev, next) {
             var compartment = model.compartments[next];
 
-            var nodes       = model.metabolites
-                .map(function (m) {
-                    var type = { "name": "metabolite", "label": "Metabolite" };
-                    var node = { label: m.name, type: type };
-
-                    return node;
-                });
-            var edges       = [ ];
+            var nodes       = null;
+            var edges       = null;
 
             if ( compartment.subsystems ) {
                 nodes           = compartment.subsystems
@@ -323,30 +323,74 @@ require([
                             });
 
                         var metabolites = subsystem.metabolites
-                            .map(function (m) {
-                                var node = { label: m.name };
-                                return node;
-                            })
-                        
-                        var type        = { "name": "subsystem", "label": "Sub System" };
+                            .reduce(function (prev, next) {
+                                var type = { "name": "metabolite",
+                                    "label": "Metabolite" };
+                                var node = { label: next.name, type: type };
+                                return Object.assign({ }, prev, { [next.id]: node });
+                            }, { });
+                        var edges       = flatten(
+                            subsystem.reactions
+                                .map(function (r) {
+                                    var edges       = [ ];
+                                    var edge_map    = { };
+
+                                    for ( const reactant of r.reactants ) {
+                                        for ( const product of r.products ) {
+                                            var target = metabolites[reactant];
+                                            
+                                            var edge = {
+                                                source: metabolites[product],
+                                                target: target,
+                                                label:  r.name,
+                                            };
+
+                                            if ( !(reactant.id in edge_map) ) {
+                                                edge_map[reactant.id] = edge
+                                            } else {
+                                                edge.target = edge_map[reactant.id];
+                                            }
+
+                                            edges.push(edge);
+                                        };
+                                    };
+
+                                    return edges;
+                                })
+                        )
+
+                        var type        = { "name": "subsystem",
+                            "label": "Sub System" };
                         var node        = { label: subsystem.name,
                             type: type,
                             style: "subsystem-" + subsystem.name,
-                            nodes: metabolites, edges: [ ] };
+                            nodes: Object.values(metabolites), edges: edges };
 
                         return node;
                     });
+                edges = [ ];
+            } else {
+                nodes = model.metabolites
+                    .map(function (m) {
+                        var type = { "name": "metabolite",
+                            "label": "Metabolite" };
+                        var node = { label: m.name, type: type };
+
+                        return node;
+                    });
+                edges = [ ];
             }
 
-            var type        = { "name": "compartment", "label": "Compartment" };
-            var node        = { label: compartment.name,
+            var type = { "name": "compartment",
+                "label": "Compartment" };
+            var node = { label: compartment.name,
                 style: "compartment-" + next, 
                 nodes: nodes, edges: edges, type: type };
 
             return Object.assign({ }, prev, { [next]: node });
         }, { });
 
-        var edges           = Combinatorics
+        var edges = Combinatorics
             .combination(compartments, 2)
             .toArray()
             .map(function (combination) {
@@ -386,14 +430,16 @@ require([
                 var object = targets.reduce(function (prev, next) {
                     return prev.dist < next.dist ? prev : next;
                 });
+                object     = object.node ? object.node : object.edge;
     
                 console.log("On Mouse Move: ");
                 console.log(object);
                 
-                var title = object.node ? object.node.label : "edge";
+                var title = object.label;
 
                 tooltip({
                     title:  title,
+                    // label:  
                     show:   true,
                     style: {
                         left: (e.clientX - 10) + "px",

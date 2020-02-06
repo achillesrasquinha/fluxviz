@@ -12,6 +12,7 @@ from cobra.io.json      import model_to_dict
 
 # imports - module imports
 from fluxviz.template       import render_template
+from fluxviz.util.string    import get_random_str
 from fluxviz.util.system    import remove 
 from fluxviz.constant       import PATH
 from fluxviz._compat        import iterkeys
@@ -33,12 +34,13 @@ def plot(model):
 
         shutil.copytree(directory, abspath)
 
+    id_         = get_random_str()
     javascript  = render_template("fluxviz.js",
-        model = json_
+        model = json_, id = id_
     )
 
     template    = render_template("main.html",
-        javascript = javascript
+        javascript = javascript, id = id_
     )
 
     html        = HTML(template)
