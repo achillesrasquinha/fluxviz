@@ -77,6 +77,33 @@ require([
         }
     }
 
+    const get_element_id = name => {
+        const prefix = "fluxviz-$id-";
+        const id     = prefix + name;
+
+        return id;
+    };
+
+    const get_or_create_element = id => {
+        const element = document.getElementById(id);
+        
+        if ( !element ) {
+            const element = document.createElement("div");
+            element.setAttribute("id", id);
+
+            document.appendChild(element);
+        }
+
+        return element;
+    };
+
+    const footnote = options => {
+        const id        = get_element_id("footnote");
+        const element   = get_or_create_element(id);
+
+        
+    }
+
     function _patch_model (model) {
         console.log("Patching Reactions...");
         for ( const reaction of model.reactions ) {
@@ -258,21 +285,20 @@ require([
 
         var styles          = { };
         styles              = Object.assign({ }, styles, 
-            compartments.reduce(function (prev, next) {
+            compartments.reduce((prev, next) => {
                 var compartment = model.compartments[next];
-
+                
+                var key     = "compartment-" + next;
                 var style   = {
                     size:   compartment.metabolite_density * 15 + 15,
-                    color:  get_color("compartment")
+                    color:  get_color(key)
                 };
-
-                var key     = "compartment-" + next;
-
+                
                 var result  = Object.assign({ }, prev, { [key]: style }); 
 
                 return result;
             }, { }),
-            model.subsystems.reduce(function (prev, next) {
+            model.subsystems.reduce((prev, next) => {
                 var style   = {
                     size:   next.reaction_density * 15 + 15,
                     color:  get_color("subsystem")
@@ -283,8 +309,18 @@ require([
                 var result  = Object.assign({ }, prev, { [key]: style });
 
                 return result;
+            }, { }),
+            compartments.reduce((prev, next) => {
+                var key     = "metabolite-compartment-" + next;
+                var style   = { color: get_color("compartment-" + next) }
+                var result  = { ...prev, [key]: style }
+
+                return result
             }, { })
         );
+
+        console.log("Styles: ");
+        console.log(styles);
 
         var graph           = new ccNetViz.ccNetVizMultiLevel(element, {
             styles: Object.assign({ },
@@ -296,11 +332,10 @@ require([
                         },
                         color: get_color("node")
                     },
-                    edges: {
+                    edge: {
                         arrow: {
                             texture: "images/arrow.png"
-                        },
-                        hideSize: 2
+                        }
                     },
                 },
                 styles
@@ -326,7 +361,9 @@ require([
                             .reduce(function (prev, next) {
                                 var type = { "name": "metabolite",
                                     "label": "Metabolite" };
-                                var node = { label: next.name, type: type };
+                                var node = { label: next.name, type: type,
+                                    style: "metabolite-compartment-" + next.compartment
+                                };
                                 return Object.assign({ }, prev, { [next.id]: node });
                             }, { });
                         var edges       = flatten(
