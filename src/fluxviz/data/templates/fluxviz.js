@@ -2,7 +2,6 @@ require.config({
     baseUrl: "js/vendor",
     paths: {
         ccNetViz:           "ccNetViz",
-        Combinatorics:      "https://cdn.jsdelivr.net/npm/js-combinatorics@0.5.5/combinatorics.min",
         randomColor:        "https://cdnjs.cloudflare.com/ajax/libs/randomcolor/0.5.4/randomColor.min",
         deepmerge:          "https://unpkg.com/deepmerge@4.2.2/dist/umd"
     }
@@ -10,12 +9,10 @@ require.config({
 
 require([
     "ccNetViz",
-    "Combinatorics",
     "randomColor",
     "deepmerge"
 ], function (
     ccNetViz,
-    Combinatorics,
     randomColor,
     deepmerge
 ) {
@@ -68,8 +65,8 @@ require([
         }
 
         var header       = document.getElementById(TOOLTIP_ID + "-header");
-        header.innerHTML = "<h3>" + options.title + "</h3>"
-    
+        header.innerHTML = "<h3>" + options.title + " " + options.label + "</h3>";
+        
         if ( options.headerStyle ) {
             for ( const type in options.headerStyle ) {
                 header.style[type] = options.style[type];
@@ -100,8 +97,6 @@ require([
     const footnote = options => {
         const id        = get_element_id("footnote");
         const element   = get_or_create_element(id);
-
-        
     }
 
     function _patch_model (model) {
@@ -153,15 +148,44 @@ require([
                 )
             );
 
-            model.compartments[compartment] = { name: name,
-                n_metabolites: n_metabolites, subsystems: subsystems };
+            const connections = compartments
+                .filter(c => c != compartment)
+                .map(c => {
+                    const connection = { compartment: c };
+                    const reactions  = [ ];
 
-            var foobar = compartments
-                .map(function (c) {
+                    for ( const reaction of model.reactions ) {
+                        const compartments = reaction.compartments;
 
+                        if ( compartments.includes(c) && compartments.includes(compartment) ) {
+                            reactions.push(reaction);
+                        }
+                    }
+
+                    connection.reactions = reactions;
+
+                    return connection;
                 })
-        }
+                .filter(c => c.reactions.length)
 
+            const max_reactions = Math.max.apply(null,
+                connections
+                    .map(connection => {
+                        return connection.reactions.length
+                    })
+            );
+
+            for ( const connection of connections ) {
+                const reaction_density      = connection.reactions.length
+                    / max_reactions;
+                connection.reaction_density = reaction_density;
+            }
+
+            model.compartments[compartment] = { name: name,
+                n_metabolites: n_metabolites, subsystems: subsystems,
+                connections: connections };
+        }
+        
         // Find Densities...
         var max_metabolites = Math.max.apply(null,
             compartments
@@ -316,7 +340,20 @@ require([
                 var result  = { ...prev, [key]: style }
 
                 return result
-            }, { })
+            }, { }),
+            compartments.reduce((prev, next) => {
+                const compartment   = model.compartments[next]
+                var   result        = { ...prev };
+
+                for ( const connection of compartment.connections ) {
+                    const key       = "compartment-edge-" + next + "-" + connection.compartment;
+                    const style     = { width: Math.max(1, connection.reaction_density * 3) };
+
+                    result          = { ...result, [key]: style };
+                }
+
+                return result;
+            }, { }),
         );
 
         console.log("Styles: ");
@@ -427,33 +464,23 @@ require([
             return Object.assign({ }, prev, { [next]: node });
         }, { });
 
-        var edges = Combinatorics
-            .combination(compartments, 2)
-            .toArray()
-            .map(function (combination) {
-                var a = combination[0];
-                var b = combination[1];
-                var c = { from: a, to: b, connected: false };
+        const edges = flatten(
+            compartments
+                .map(c => {
+                    const compartment   = model.compartments[c];
+                    const edges         = [ ];
 
-                for ( const reaction of reactions ) {
-                    var compartments = reaction.compartments;
-                    
-                    if ( compartments.includes(a) && compartments.includes(b) ) {
-                        c = { from: a, to: b, connected: true };
+                    for ( const connection of compartment.connections ) {
+                        const to    = connection.compartment;
+                        const edge  = { source: nodes[c], target: nodes[to],
+                            style: "compartment-edge-" + c + "-" + to }
+
+                        edges.push(edge)
                     }
-                }
 
-                return c;
-            })
-            .filter(function (c) { return c.connected })
-            .map(function (combination) {
-                var from = combination.from;
-                var to   = combination.to;
-                
-                var edge = { source: nodes[from], target: nodes[to] };
-
-                return edge;
-            });
+                    return edges;
+                })
+        )
 
         graph.set(Object.values(nodes), edges, "force").then(function () {
             graph.draw();
@@ -472,11 +499,12 @@ require([
                 console.log("On Mouse Move: ");
                 console.log(object);
                 
-                var title = object.label;
+                const title = object.label;
+                const label = object.type.label;
 
                 tooltip({
                     title:  title,
-                    // label:  
+                    label:  label,
                     show:   true,
                     style: {
                         left: (e.clientX - 10) + "px",
