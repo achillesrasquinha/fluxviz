@@ -1,6 +1,10 @@
+window.fluxviz = { };
+
 require.config({
     baseUrl: "js/vendor",
     paths: {
+        jQuery:             "https://code.jquery.com/jquery-3.4.1.slim.min",
+        bootstrap:          "https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min",
         ccNetViz:           "ccNetViz",
         randomColor:        "https://cdnjs.cloudflare.com/ajax/libs/randomcolor/0.5.4/randomColor.min",
         deepmerge:          "https://unpkg.com/deepmerge@4.2.2/dist/umd"
@@ -8,10 +12,14 @@ require.config({
 });
 
 require([
+    "jQuery",
+    "bootstrap",
     "ccNetViz",
     "randomColor",
     "deepmerge"
 ], function (
+    jQuery,
+    bootstrap,
     ccNetViz,
     randomColor,
     deepmerge
@@ -33,46 +41,12 @@ require([
         headerStyle: {
             padding:                ".5rem .75rem",
             fontSize:               "1rem",
-            backgroundColor:        "#F7F7F7",
+            backgroundColor:        "#F7F7F7 !important",
             borderBottom:           "1px solid #EBEBEB",
             borderTopLeftRadius:    "calc(.3rem - 1px)",
             borderTopRightRadius:   "calc(.3rem - 1px)"
         }
     };
-
-    function tooltip (options) {
-        options = deepmerge(DEFAULT_TOOLTIP_OPTIONS, options);
-
-        var element = document.getElementById(TOOLTIP_ID);
-        if ( !element ) {
-            var element     = document.createElement("div");
-            element.setAttribute("id", TOOLTIP_ID);
-        
-            document.body.appendChild(element);
-
-            var header      = document.createElement("div");
-            header.setAttribute("id", TOOLTIP_ID + "-header");
-
-            element.appendChild(header);
-        };
-
-        element.style.display = options.show ? "block" : "none";
-        
-        if ( options.style ) {
-            for ( const type in options.style ) {
-                element.style[type] = options.style[type];
-            }
-        }
-
-        var header       = document.getElementById(TOOLTIP_ID + "-header");
-        header.innerHTML = "<h3>" + options.title + " " + options.label + "</h3>";
-        
-        if ( options.headerStyle ) {
-            for ( const type in options.headerStyle ) {
-                header.style[type] = options.style[type];
-            }
-        }
-    }
 
     const get_element_id = name => {
         const prefix = "fluxviz-$id-";
@@ -94,12 +68,54 @@ require([
         return element;
     };
 
+    fluxviz.tooltip = options => {
+        options = deepmerge(DEFAULT_TOOLTIP_OPTIONS, options);
+
+        var element = document.getElementById(TOOLTIP_ID);
+        if ( !element ) {
+            var element     = document.createElement("div");
+            element.setAttribute("id", TOOLTIP_ID);
+        
+            document.body.appendChild(element);
+
+            var header      = document.createElement("div");
+            header.setAttribute("id", TOOLTIP_ID + "-header");
+
+            element.appendChild(header);
+
+            var body        = document.createElement("div");
+            body.setAttribute("id", TOOLTIP_ID + "-body");
+
+            element.appendChild(body);
+        };
+
+        element.style.display = options.show ? "block" : "none";
+        
+        if ( options.style ) {
+            for ( const type in options.style ) {
+                element.style[type] = options.style[type];
+            }
+        }
+
+        var header       = document.getElementById(TOOLTIP_ID + "-header");
+        header.innerHTML = "<h3>" + options.title + " " + options.label + "</h3>";
+        
+        if ( options.headerStyle ) {
+            for ( const type in options.headerStyle ) {
+                header.style[type] = options.style[type];
+            }
+        }
+        
+        var body        = document.getElementById(TOOLTIP_ID + "-body");
+        body.innerHTML  = "Foo Bar"
+    }
+
     const footnote = options => {
         const id        = get_element_id("footnote");
         const element   = get_or_create_element(id);
     }
 
-    function _patch_model (model) {
+    const patch_model = model => {
         console.log("Patching Reactions...");
         for ( const reaction of model.reactions ) {
             var compartments = [ ];
@@ -146,7 +162,7 @@ require([
                             })
                     )
                 )
-            );
+            ).filter(Boolean);
 
             const connections = compartments
                 .filter(c => c != compartment)
@@ -223,7 +239,7 @@ require([
                         .filter(Boolean)
                 )
             )
-        );
+        ).filter(Boolean);
         
         subsystems       = subsystems
             .map(function (subsystem) {
@@ -292,8 +308,8 @@ require([
         return result;
     }
 
-    const main = model => {
-        _patch_model(model);
+    fluxviz.render = model => {
+        patch_model(model);
 
         console.log("Patched Model: ");
         console.log(model);
@@ -358,7 +374,7 @@ require([
 
                 for ( const connection of compartment.connections ) {
                     const key       = "compartment-edge-" + next + "-" + connection.compartment;
-                    const style     = { width: Math.max(1, connection.reaction_density * 3) };
+                    const style     = { width: Math.max(1, Math.min(connection.reaction_density * 3, 3)) };
 
                     result          = { ...result, [key]: style };
                 }
@@ -370,14 +386,14 @@ require([
         console.log("Styles: ");
         console.log(styles);
 
-        const graph = new ccNetViz.ccNetVizMultiLevel(element, {
+        fluxviz._graph = new ccNetViz.ccNetVizMultiLevel(element, {
             bidirectional: "overlap",
             styles: Object.assign({ },
                 {
                     node: {
                         texture: "images/circle.png",
                         label: {
-                            hideSize: 6
+                            hideSize: 30
                         },
                         color: get_color("node")
                     },
@@ -385,9 +401,6 @@ require([
                         arrow: {
                             texture: "images/arrow-2.png"
                         }
-                    },
-                    edgeHover: {
-                        color: get_color("edge")
                     }
                 },
                 styles
@@ -402,7 +415,7 @@ require([
             var nodes = null;
             var edges = null;
 
-            if ( compartment.subsystems ) {
+            if ( compartment.subsystems.length ) {
                 nodes = compartment.subsystems
                     .map(function (subsystem) {
                             subsystem   = model.subsystems.find(function (s) {
@@ -428,9 +441,12 @@ require([
                                         for ( const product of r.products ) {
                                             var target = metabolites[reactant];
                                             
-                                            var edge = {
+                                            const type = { "name": "reaction",
+                                                "label": "Reaction" }; 
+                                            const edge = {
                                                 source: metabolites[product],
                                                 target: target,
+                                                type:   type,
                                                 label:  r.name,
                                             };
 
@@ -459,15 +475,46 @@ require([
                     });
                 edges = [ ];
             } else {
-                nodes = model.metabolites
-                    .map(function (m) {
-                        var type = { "name": "metabolite",
-                            "label": "Metabolite" };
-                        var node = { label: m.name, type: type };
+                nodes = model.metabolites.reduce((prev, next) => {
+                    var type = { "name": "metabolite", "label": "Metabolite" };
+                    var node = { label: next.name, type: type,
+                        style: "metabolite-compartment-" + next.compartment };
 
-                        return node;
-                    });
-                edges = [ ];
+                    return { ...prev, [next.id]: node };
+                }, { })
+                edges = flatten(
+                    model.reactions
+                        .map(r => {
+                            var edges       = [ ];
+                            var edge_map    = { };
+
+                            for ( const reactant of r.reactants ) {
+                                for ( const product of r.products ) {
+                                    var target = nodes[reactant];
+                                    
+                                    const type = { "name": "reaction",
+                                        "label": "Reaction" };
+                                    const edge = {
+                                        source: nodes[product],
+                                        target: target,
+                                        type:   type,
+                                        label:  r.name
+                                    };
+
+                                    if ( !(reactant.id in edge_map) ) {
+                                        edge_map[reactant.id] = edge
+                                    } else {
+                                        edge.target = edge_map[reactant.id];
+                                    }
+
+                                    edges.push(edge);
+                                };
+                            };
+
+                            return edges;
+                        })
+                );
+                nodes = Object.values(nodes);
             }
 
             var type    = { "name": "compartment",
@@ -504,45 +551,54 @@ require([
                 })
         )
 
-        graph.set(Object.values(nodes), edges, "force").then(function () {
-            graph.draw();
+        fluxviz._graph.set(Object.values(nodes), edges, "grid").then(function () {
+            fluxviz._graph.draw();
         });
+
+        const pathway   = [ ];
         
-        element.addEventListener("mousemove", function (e) {
-            var target  = getSubGraphOnEvent(graph, e);
+        element.addEventListener("mousemove", e => {
+            var target  = getSubGraphOnEvent(fluxviz._graph, e);
             var targets = target.nodes.length ? target.nodes : target.edges;
             
             if ( targets.length ) {
-                var object = targets.reduce(function (prev, next) {
+                var object  = targets.reduce(function (prev, next) {
                     return prev.dist < next.dist ? prev : next;
                 });
 
-                if ( object.edge ) {
-                    graph.updateEdges({ ...object.edge, style: "edgeHover" })
-                }
+                object      = object.node ? object.node : object.edge;
 
-                object     = object.node ? object.node : object.edge;
-    
+                
                 console.log("On Mouse Move: ");
                 console.log(object);
                 
+                pathway.push(object);
+                console.log("Pathway: ");
+                console.log(pathway);
+
                 const title = object.label;
                 const label = object.type.label;
-                const body  = object.notes.body;
+                const notes = object.notes || { };
 
-                tooltip({
+                fluxviz.tooltip({
                     title:  title,
                     label:  label,
-                    body:   body,
+                    body:   notes.body,
                     show:   true,
                     style: {
                         left: (e.clientX - 10) + "px",
-                        top:  (e.clientY + 25) + "px"
+                        top:  (e.clientY + 30) + "px"
                     }
                 })
             } else {
-                tooltip({ show: false });
+                fluxviz.tooltip({ show: false });
             }
+        });
+
+        element.addEventListener("mouseleave", e => {
+            console.log("Resetting Pathways...");
+            pathway = [ ];
+            console.log("Pathway resetted.");
         });
 
         console.log("Graph: ");
@@ -555,5 +611,5 @@ require([
     console.log("Rendering Model: ");
     console.log($model);
 
-    main($model);
+    fluxviz.render($model);
 });
