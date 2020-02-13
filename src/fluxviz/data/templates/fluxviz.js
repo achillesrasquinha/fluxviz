@@ -176,7 +176,18 @@ require([
             );
 
             for ( const connection of connections ) {
-                const reaction_density      = connection.reactions.length
+                const reactions             = flatten(
+                    connection.reactions
+                        .map(r => {
+                            if ( r.reversible ) {
+                                return [r, r];
+                            }
+
+                            return r;
+                        })
+                )
+
+                const reaction_density      = reactions.length
                     / max_reactions;
                 connection.reaction_density = reaction_density;
             }
@@ -359,7 +370,8 @@ require([
         console.log("Styles: ");
         console.log(styles);
 
-        var graph           = new ccNetViz.ccNetVizMultiLevel(element, {
+        const graph = new ccNetViz.ccNetVizMultiLevel(element, {
+            bidirectional: "overlap",
             styles: Object.assign({ },
                 {
                     node: {
@@ -371,24 +383,27 @@ require([
                     },
                     edge: {
                         arrow: {
-                            texture: "images/arrow.png"
+                            texture: "images/arrow-2.png"
                         }
                     },
+                    edgeHover: {
+                        color: get_color("edge")
+                    }
                 },
                 styles
             )
         });
 
-        var reactions       = model.reactions;
+        var reactions = model.reactions;
 
-        var nodes           = compartments.reduce(function (prev, next) {
+        var nodes     = compartments.reduce(function (prev, next) {
             var compartment = model.compartments[next];
 
-            var nodes       = null;
-            var edges       = null;
+            var nodes = null;
+            var edges = null;
 
             if ( compartment.subsystems ) {
-                nodes           = compartment.subsystems
+                nodes = compartment.subsystems
                     .map(function (subsystem) {
                             subsystem   = model.subsystems.find(function (s) {
                                 return s.name == subsystem
@@ -455,11 +470,18 @@ require([
                 edges = [ ];
             }
 
-            var type = { "name": "compartment",
+            var type    = { "name": "compartment",
                 "label": "Compartment" };
-            var node = { label: compartment.name,
+            const notes = {
+                body: "                     \
+                    <div>                   \
+                        Reaction Density:   \
+                    </div>                  \
+                "
+            };
+            var node    = { label: compartment.name,
                 style: "compartment-" + next, 
-                nodes: nodes, edges: edges, type: type };
+                nodes: nodes, edges: edges, type: type, notes: notes };
 
             return Object.assign({ }, prev, { [next]: node });
         }, { });
@@ -487,13 +509,18 @@ require([
         });
         
         element.addEventListener("mousemove", function (e) {
-            var target    = getSubGraphOnEvent(graph, e);
-            var targets   = target.nodes.length ? target.nodes : target.edges;
+            var target  = getSubGraphOnEvent(graph, e);
+            var targets = target.nodes.length ? target.nodes : target.edges;
             
             if ( targets.length ) {
                 var object = targets.reduce(function (prev, next) {
                     return prev.dist < next.dist ? prev : next;
                 });
+
+                if ( object.edge ) {
+                    graph.updateEdges({ ...object.edge, style: "edgeHover" })
+                }
+
                 object     = object.node ? object.node : object.edge;
     
                 console.log("On Mouse Move: ");
@@ -501,10 +528,12 @@ require([
                 
                 const title = object.label;
                 const label = object.type.label;
+                const body  = object.notes.body;
 
                 tooltip({
                     title:  title,
                     label:  label,
+                    body:   body,
                     show:   true,
                     style: {
                         left: (e.clientX - 10) + "px",
