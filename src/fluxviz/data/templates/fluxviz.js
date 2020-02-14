@@ -6,6 +6,7 @@ require.config({
         jQuery:             "https://code.jquery.com/jquery-3.4.1.slim.min",
         bootstrap:          "https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min",
         ccNetViz:           "ccNetViz",
+        // ccNetVizMultiLevel: "ccNetViz-multilevel-plugin",
         randomColor:        "https://cdnjs.cloudflare.com/ajax/libs/randomcolor/0.5.4/randomColor.min",
         deepmerge:          "https://unpkg.com/deepmerge@4.2.2/dist/umd"
     }
@@ -15,15 +16,19 @@ require([
     "jQuery",
     "bootstrap",
     "ccNetViz",
+    // "ccNetVizMultiLevel",
     "randomColor",
     "deepmerge"
 ], function (
     jQuery,
     bootstrap,
     ccNetViz,
+    // ccNetVizMultiLevel,
     randomColor,
     deepmerge
 ) {
+    // ccNetViz        = ccNetViz.default;
+
     var CANVAS_ID   = "fluxviz-$id-graph";
     var TOOLTIP_ID  = "fluxviz-$id-tooltip";
 
@@ -139,6 +144,16 @@ require([
             // reaction.subsystems      = reaction.subsystem.split(", ");
 
             reaction.compartments   = compartments;
+
+            if ( reaction.notes
+                && reaction.notes.fluxviz 
+                && reaction.notes.fluxviz.flux ) {
+                reaction.flux = reaction.notes.fluxviz.flux;
+            }
+        }
+
+        if ( reaction.flux ) {
+            
         }
 
         console.log("Patching Compartments...");
@@ -381,6 +396,13 @@ require([
 
                 return result;
             }, { }),
+            {
+                "intermediate-edge": {
+                    arrow: {
+                        texture: ""
+                    }
+                }
+            }
         );
 
         console.log("Styles: ");
@@ -393,13 +415,18 @@ require([
                     node: {
                         texture: "images/circle.png",
                         label: {
-                            hideSize: 30
+                            hideSize: 6
                         },
                         color: get_color("node")
                     },
                     edge: {
                         arrow: {
-                            texture: "images/arrow-2.png"
+                            texture: "images/arrow-2.png",
+                            animation: {
+                                type: "size"
+                            },
+                            type: "delta",
+                            size: 12
                         }
                     }
                 },
@@ -407,9 +434,11 @@ require([
             )
         });
 
-        var reactions = model.reactions;
+        var reactions    = model.reactions;
 
-        var nodes     = compartments.reduce(function (prev, next) {
+        // const multiLevel = { radius: 0.1, activation: 1, layout: 'force' }
+
+        var nodes        = compartments.reduce(function (prev, next) {
             var compartment = model.compartments[next];
 
             var nodes = null;
@@ -418,7 +447,7 @@ require([
             if ( compartment.subsystems.length ) {
                 nodes = compartment.subsystems
                     .map(function (subsystem) {
-                            subsystem   = model.subsystems.find(function (s) {
+                            subsystem = model.subsystems.find(function (s) {
                                 return s.name == subsystem
                             });
 
@@ -440,20 +469,21 @@ require([
                                     for ( const reactant of r.reactants ) {
                                         for ( const product of r.products ) {
                                             var target = metabolites[reactant];
-                                            
+
                                             const type = { "name": "reaction",
                                                 "label": "Reaction" }; 
                                             const edge = {
                                                 source: metabolites[product],
                                                 target: target,
                                                 type:   type,
-                                                label:  r.name,
+                                                label:  r.name
                                             };
 
-                                            if ( !(reactant.id in edge_map) ) {
-                                                edge_map[reactant.id] = edge
+                                            if ( !(reactant in edge_map) ) {
+                                                edge_map[reactant] = edge
                                             } else {
-                                                edge.target = edge_map[reactant.id];
+                                                edge.target = edge_map[reactant];
+                                                edge.style  = "intermediate-edge"
                                             }
 
                                             edges.push(edge);
@@ -469,7 +499,8 @@ require([
                         var node        = { label: subsystem.name,
                             type: type,
                             style: "subsystem-" + subsystem.name,
-                            nodes: Object.values(metabolites), edges: edges };
+                            nodes: Object.values(metabolites), edges: edges,
+                            /* multiLevel: multiLevel */ };
 
                         return node;
                     });
@@ -528,7 +559,8 @@ require([
             };
             var node    = { label: compartment.name,
                 style: "compartment-" + next, 
-                nodes: nodes, edges: edges, type: type, notes: notes };
+                nodes: nodes, edges: edges, type: type, notes: notes,
+                /* multiLevel: multiLevel */ };
 
             return Object.assign({ }, prev, { [next]: node });
         }, { });
@@ -544,18 +576,18 @@ require([
                         const edge  = { source: nodes[c], target: nodes[to],
                             style: "compartment-edge-" + c + "-" + to }
 
-                        edges.push(edge)
+                        edges.push(edge);
                     }
 
                     return edges;
                 })
         )
 
-        fluxviz._graph.set(Object.values(nodes), edges, "grid").then(function () {
+        fluxviz._graph.set(Object.values(nodes), edges, "force").then(() => {
             fluxviz._graph.draw();
         });
 
-        const pathway   = [ ];
+        var pathway = [ ];
         
         element.addEventListener("mousemove", e => {
             var target  = getSubGraphOnEvent(fluxviz._graph, e);
@@ -567,14 +599,11 @@ require([
                 });
 
                 object      = object.node ? object.node : object.edge;
-
                 
                 console.log("On Mouse Move: ");
                 console.log(object);
                 
                 pathway.push(object);
-                console.log("Pathway: ");
-                console.log(pathway);
 
                 const title = object.label;
                 const label = object.type.label;
@@ -589,7 +618,7 @@ require([
                         left: (e.clientX - 10) + "px",
                         top:  (e.clientY + 30) + "px"
                     }
-                })
+                });
             } else {
                 fluxviz.tooltip({ show: false });
             }
