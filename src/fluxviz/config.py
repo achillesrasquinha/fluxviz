@@ -78,5 +78,5 @@ class Settings:
     def get(self, key):
         return self.config.get("settings", key)
 
-    def set(self, key, value):
-        self.config.set("settings", key, value)
+    def set(self, key, value, force = True):
+        self.config.set("settings", key, value, force = force)

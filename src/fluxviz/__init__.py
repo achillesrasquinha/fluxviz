@@ -4,3 +4,4 @@ from fluxviz.__attr__ import (
     __version__
 )
 from fluxviz.fluxviz  import plot
+from fluxviz.config   import Settings

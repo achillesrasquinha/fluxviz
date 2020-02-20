@@ -15,10 +15,32 @@ from cobra.exceptions   import OptimizationError
 from fluxviz.template       import render_template
 from fluxviz.util.string    import get_random_str
 from fluxviz.util.system    import remove 
+from fluxviz.util.array     import sequencify
 from fluxviz.constant       import PATH
-from fluxviz._compat        import iterkeys
+from fluxviz._compat        import iterkeys, string_types
+from fluxviz.config         import Settings
+from fluxviz.log            import get_logger
+
+logger = get_logger()
 
 def patch_model(model):
+    settings         = Settings()
+    hide_metabolites = settings.get("hide_metabolites")
+
+    if hide_metabolites:
+        hide_metabolites = hide_metabolites.split(",")
+    
+        for metabolite in model.metabolites:
+            for hide_metabolite in hide_metabolites:
+                if isinstance(metabolite.id, string_types) and metabolite.id:
+                    if metabolite.annotation:
+                        if "bigg.metabolite" in metabolite.annotation:
+                            annotation = sequencify(metabolite.annotation["bigg.metabolite"])
+                            if hide_metabolite in annotation:
+                                metabolite.notes["fluxviz"] = dict({
+                                    "hide": True
+                                })
+
     for reaction in model.reactions:
         try:
             flux = reaction.flux
@@ -31,7 +53,9 @@ def patch_model(model):
     return model
 
 def plot(model):
+    logger.info("Patching Model...")
     model       = patch_model(model)
+    logger.info("Model patched.");
 
     dict_       = model_to_dict(model)
     json_       = json.dumps(dict_)

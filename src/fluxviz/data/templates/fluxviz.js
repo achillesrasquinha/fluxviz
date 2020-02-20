@@ -1,4 +1,9 @@
-window.fluxviz = { };
+window.fluxviz = {
+    util: {
+        array: { }
+    },
+    ENVIRONMENT: "development"
+};
 
 require.config({
     baseUrl: "js/vendor",
@@ -19,20 +24,136 @@ require([
     // "ccNetVizMultiLevel",
     "randomColor",
     "deepmerge"
-], function (
+], (
     jQuery,
     bootstrap,
     ccNetViz,
     // ccNetVizMultiLevel,
     randomColor,
     deepmerge
-) {
+) => {
     // ccNetViz        = ccNetViz.default;
+
+    /**
+     * @description The base class for all FluxViz Errors.
+     *
+     * @example
+     * try
+     *      throw new fluxviz.Error("foobar")
+     * catch (e)
+     *      fluxviz.logger.info(e.name)
+     * // returns "FluxVizError"
+     *
+     * @see  https://stackoverflow.com/a/32749533
+     * @todo Requires "transform-builtin-extend" for Babel 6
+     */
+    fluxviz.Error = class extends Error {
+    	constructor (message) {
+    		super (message)
+
+    		this.name = 'FluxVizError'
+
+    		if ( typeof Error.captureStackTrace === 'function' )
+    			Error.captureStackTrace(this, this.constructor)
+    		else
+    			this.stack = (new Error(message)).stack
+    	}
+    }
+
+    /**
+     * @description TypeError
+     */
+    fluxviz.TypeError  = class extends fluxviz.Error {
+        constructor (message) {
+            super (message)
+
+            this.name = this.constructor.name
+        }
+    }
+
+    // fluxviz.loggers - A registry for fluxviz loggers.
+    fluxviz.loggers    = [ ];
+
+    /**
+     * @description fluxviz's Logger Class
+     *
+     * @example
+     * fluxviz.logger       = fluxviz.Logger.get('foobar')
+     * fluxviz.logger.level = fluxviz.Logger.DEBUG
+     *
+     * fluxviz.logger.info('foobar')
+     * // prints '[timestamp] foobar: foobar'
+     */
+    fluxviz.Logger = class {
+        /**
+         * @description fluxviz's Logger Class's constructor.
+         *
+         * @param {string} name - Name of the logger.
+         */
+        constructor (name, level) {
+            if ( typeof name !== 'string' )
+                throw new fluxviz.TypeError("Expected string for name, got " + (typeof name) + " instead.");
+
+            this.name   = name
+            this.level  = level
+
+            if ( !this.level ) {
+                if ( fluxviz.ENVIRONMENT == "development" )
+                    this.level = fluxviz.Logger.ERROR
+                else
+                    this.level = fluxviz.Logger.NOTSET
+            }
+        }
+
+        /**
+         * @description Get instance of fluxviz.Logger (return registered one if declared).
+         *
+         * @param {string} name - Name of the logger.
+         */
+        static get (name, level) {
+            if ( !(name in fluxviz.loggers) )
+                fluxviz.loggers[name] = new fluxviz.Logger(name, level)
+            return fluxviz.loggers[name]
+        }
+
+        debug (message) { this.log(message, fluxviz.Logger.DEBUG) }
+        info  (message) { this.log(message, fluxviz.Logger.INFO)  }
+        warn  (message) { this.log(message, fluxviz.Logger.WARN)  }
+        error (message) { this.log(message, fluxviz.Logger.ERROR) }
+
+        log (message, level) {
+            const timestamp   = new Date();
+
+            if ( level.value <= this.level.value ) {
+                const timestr = timestamp.getHours() + ":" + timestamp.getMinutes() + ":" + (timestamp.getSeconds() + "." + timestamp.getMilliseconds());
+                console.log("%c " + timestr, "color: " + level.color, message)
+            }
+        }
+    }
+
+    fluxviz.Logger.DEBUG  = { value: 10, color: '#616161', name: 'DEBUG'  }
+    fluxviz.Logger.INFO   = { value: 20, color: '#2196F3', name: 'INFO'   }
+    fluxviz.Logger.WARN   = { value: 30, color: '#FFC107', name: 'WARN'   }
+    fluxviz.Logger.ERROR  = { value: 40, color: '#F44336', name: 'ERROR'  }
+    fluxviz.Logger.NOTSET = { value:  0,                   name: 'NOTSET' }
+
+    fluxviz.logger        = fluxviz.Logger.get('fluxviz');
+
+    fluxviz.util.array.flatten  = arr => [].concat.apply([], arr);
+
+    fluxviz.util.array.areduce  = (iterable, reducer, initial) => {
+        const series = (reducer, initial) =>
+            iterable => 
+                iterable.reduce((chain, value, key) =>
+                    chain.then(results => reducer(results, value, key, iterable))    
+                , Promise.resolve(initial))
+
+        return Promise.all(iterable)
+            .then(series(reducer, initial))
+    };
 
     var CANVAS_ID   = "fluxviz-$id-graph";
     var TOOLTIP_ID  = "fluxviz-$id-tooltip";
-
-    const flatten   = arr => [].concat.apply([], arr);
 
     var DEFAULT_TOOLTIP_OPTIONS = {
         style: {
@@ -112,7 +233,6 @@ require([
         }
         
         var body        = document.getElementById(TOOLTIP_ID + "-body");
-        body.innerHTML  = "Foo Bar"
     }
 
     const footnote = options => {
@@ -120,14 +240,14 @@ require([
         const element   = get_or_create_element(id);
     }
 
-    const patch_model = model => {
-        console.log("Patching Reactions...");
+    const patch_model = async model => {
+        fluxviz.logger.warn("Patching Reactions...");
         for ( const reaction of model.reactions ) {
-            var compartments = [ ];
+            var compartments = new Set();
 
             for ( const reaction_metabolite in reaction.metabolites ) {
                 var metabolite = model.metabolites.find(function (m) { return m.id == reaction_metabolite });
-                compartments.push(metabolite.compartment);
+                compartments.add(metabolite.compartment);
             }
 
             reaction.stoichiometry      = reaction.metabolites;
@@ -143,7 +263,7 @@ require([
             reaction.subsystems         = [reaction.subsystem];
             // reaction.subsystems      = reaction.subsystem.split(", ");
 
-            reaction.compartments   = compartments;
+            reaction.compartments       = Array.from(compartments);
 
             if ( reaction.notes
                 && reaction.notes.fluxviz 
@@ -152,14 +272,19 @@ require([
             }
         }
 
-        if ( reaction.flux ) {
-            
+        fluxviz.logger.warn("Patching Metabolites...");
+        for ( const metabolite of model.metabolites ) {
+            if ( metabolite.notes && metabolite.notes.fluxviz ) {
+                metabolite.hide = metabolite.notes.fluxviz.hide;
+            } else {
+                metabolite.hide = false;
+            }
         }
-
-        console.log("Patching Compartments...");
+        
+        fluxviz.logger.warn("Patching Compartments...");
         var compartments = Object.keys(model.compartments);
         for ( const compartment in model.compartments ) {
-            var name            = model.compartments[compartment];
+            var name            = model.compartments[compartment] || compartment;
 
             var n_metabolites   = model.metabolites.filter(function (m) {
                 return m.compartment == compartment;
@@ -167,7 +292,7 @@ require([
 
             var subsystems      = Array.from(
                 new Set(
-                    flatten(
+                    fluxviz.util.array.flatten(
                         model.reactions
                             .filter(function (r) {
                                 return r.compartments.includes(compartment)
@@ -207,7 +332,7 @@ require([
             );
 
             for ( const connection of connections ) {
-                const reactions             = flatten(
+                const reactions             = fluxviz.util.array.flatten(
                     connection.reactions
                         .map(r => {
                             if ( r.reversible ) {
@@ -243,10 +368,10 @@ require([
             model.compartments[compartment].metabolite_density = metabolite_density;
         }
 
-        console.log("Patching SubSystems...");
-        var subsystems   = Array.from(
+        fluxviz.logger.warn("Patching SubSystems...");
+        var subsystems = Array.from(
             new Set(
-                flatten(
+                fluxviz.util.array.flatten(
                     model.reactions
                         .map(function (r) {
                             return r.subsystems
@@ -264,7 +389,7 @@ require([
                     })
                 var metabolites = Array.from(
                     new Set(
-                        flatten(
+                        fluxviz.util.array.flatten(
                             reactions
                                 .map(function (r) {
                                     return r.metabolites
@@ -277,7 +402,8 @@ require([
                     })
 
                     return metabolite;
-                });
+                })
+                .filter(m => !m.hide);
 
                 return { name: subsystem, 
                     metabolites: metabolites, reactions: reactions };
@@ -298,7 +424,7 @@ require([
 
         model.subsystems = subsystems;
 
-        console.log("Model Patched.");
+        fluxviz.logger.info("Model Patched.");
     }
 
     function getSubGraphOnEvent (graph, e) {
@@ -322,12 +448,88 @@ require([
 
         return result;
     }
+    
+    const get_metabolite_nodes_and_reaction_edges = async (metabolites, reactions) => {
+        fluxviz.logger.info("Building Metabolite Nodes...");
+        let nodes = metabolites
+            .reduce((prev, next) => {
+                const type = { "name": "metabolite", "label": "Metabolite" };
+                const node = { label: next.name || next.id, type: type,
+                    style: "metabolite-compartment-" + next.compartment,
+                    object: next };
 
-    fluxviz.render = model => {
-        patch_model(model);
+                return { ...prev, [next.id]: node };
+            }, { });
 
-        console.log("Patched Model: ");
-        console.log(model);
+        const get_random_edge_id = () => Math.random().toString();
+
+        console.log(nodes)
+        
+        fluxviz.logger.info("Building Reaction Edges...");
+        const edges = fluxviz.util.array.flatten(
+            reactions
+                .map(r => {
+                    const edges         = [ ];
+                    const connections   = { };
+
+                    for ( const reactant of r.reactants ) {
+                        for ( const product of r.products ) {
+                            const type = { "name": "reaction",
+                                "label": "Reaction" };
+                            let   edge = { type };
+
+                            if ( product in nodes ) {
+                                if ( reactant in nodes ) {
+                                    edge = { ...edge,
+                                        source: { ...nodes[reactant], _id: get_random_edge_id() },
+                                        target: { ...nodes[product],  _id: get_random_edge_id() },
+                                        label:  r.name || r.id,
+                                        object: r,
+                                    }
+
+                                    const source = reactant + "-" + r.id;
+                                    const target = r.id + "-" + product;
+
+                                    if ( !(source in connections) && !(target in connections) ) {
+                                        connections[source] = edge;
+                                        connections[target] = edge;
+                                    }
+
+                                    // if ( source in connections ) {
+                                    //     edge.source         = connections[source];
+                                    //     connections[target] = edge;
+                                    // }
+
+                                    // if ( target in connections ) {
+                                    //     edge.target = connections[target];
+                                    //     connections[source] = edge;
+                                    // }
+
+                                    if ( edge.source._id != edge.target._id ) {
+                                        edges.push(edge);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    return edges;
+                })
+        );
+
+        nodes = Object.values(nodes);
+
+        fluxviz.logger.info("Sub Graph built.");
+
+        return { nodes, edges };
+    }
+
+    fluxviz.render = async model => {
+        fluxviz.logger.warn("Patching Model...");
+        await patch_model(model);
+
+        fluxviz.logger.info("Patched Model: ");
+        fluxviz.logger.info(model);
 
         const ASPECT_RATIO    = 16 / 9;
 
@@ -402,11 +604,21 @@ require([
                         texture: ""
                     }
                 }
+            },
+            {
+                "reaction-node": {
+                    size: 1,
+                    label: {
+                        hideSize: 2,
+                    },
+                    texture: "",
+                    color:   get_color("reaction")
+                }
             }
         );
 
-        console.log("Styles: ");
-        console.log(styles);
+        fluxviz.logger.info("Styles: ");
+        fluxviz.logger.info(styles);
 
         fluxviz._graph = new ccNetViz.ccNetVizMultiLevel(element, {
             bidirectional: "overlap",
@@ -434,118 +646,65 @@ require([
             )
         });
 
-        var reactions    = model.reactions;
-
         // const multiLevel = { radius: 0.1, activation: 1, layout: 'force' }
 
-        var nodes        = compartments.reduce(function (prev, next) {
+        var nodes        = await fluxviz.util.array.areduce(compartments, async (prev, next) => {
             var compartment = model.compartments[next];
 
             var nodes = null;
             var edges = null;
 
             if ( compartment.subsystems.length ) {
-                nodes = compartment.subsystems
-                    .map(function (subsystem) {
-                            subsystem = model.subsystems.find(function (s) {
-                                return s.name == subsystem
-                            });
+                // parallelize this.
+                const get_subsystem_node = async subsystem => {
+                    subsystem = model.subsystems.find(s => s.name == subsystem);
+                    fluxviz.logger.info("Building node for subsystem: " + subsystem.name);
 
-                        var metabolites = subsystem.metabolites
-                            .reduce(function (prev, next) {
-                                var type = { "name": "metabolite",
-                                    "label": "Metabolite" };
-                                var node = { label: next.name, type: type,
-                                    style: "metabolite-compartment-" + next.compartment
-                                };
-                                return Object.assign({ }, prev, { [next.id]: node });
-                            }, { });
-                        var edges       = flatten(
-                            subsystem.reactions
-                                .map(function (r) {
-                                    var edges       = [ ];
-                                    var edge_map    = { };
+                    const result    = await get_metabolite_nodes_and_reaction_edges(
+                        subsystem.metabolites, subsystem.reactions
+                    );
 
-                                    for ( const reactant of r.reactants ) {
-                                        for ( const product of r.products ) {
-                                            var target = metabolites[reactant];
-
-                                            const type = { "name": "reaction",
-                                                "label": "Reaction" }; 
-                                            const edge = {
-                                                source: metabolites[product],
-                                                target: target,
-                                                type:   type,
-                                                label:  r.name
-                                            };
-
-                                            if ( !(reactant in edge_map) ) {
-                                                edge_map[reactant] = edge
-                                            } else {
-                                                edge.target = edge_map[reactant];
-                                                edge.style  = "intermediate-edge"
-                                            }
-
-                                            edges.push(edge);
-                                        };
-                                    };
-
-                                    return edges;
-                                })
-                        )
-
-                        var type        = { "name": "subsystem",
+                    var type        = { "name": "subsystem",
                             "label": "Sub System" };
-                        var node        = { label: subsystem.name,
-                            type: type,
-                            style: "subsystem-" + subsystem.name,
-                            nodes: Object.values(metabolites), edges: edges,
-                            /* multiLevel: multiLevel */ };
+                    var node        = { label: subsystem.name,
+                        type: type,
+                        style: "subsystem-" + subsystem.name,
+                        nodes: Object.values(result.nodes), edges: result.edges,
+                        /* multiLevel: multiLevel */ };
 
-                        return node;
-                    });
+                    return node;
+                }
+
+                nodes = await Promise.all(compartment.subsystems.map(get_subsystem_node));
+
+                // nodes = compartment.subsystems
+                //     .map(function (subsystem) {
+                //             subsystem = model.subsystems.find(function (s) {
+                //                 return s.name == subsystem
+                //             });
+
+                //         const result  = get_metabolite_nodes_and_reaction_edges(
+                //             subsystem.metabolites, subsystem.reactions
+                //         );
+
+                //         var type        = { "name": "subsystem",
+                //             "label": "Sub System" };
+                //         var node        = { label: subsystem.name,
+                //             type: type,
+                //             style: "subsystem-" + subsystem.name,
+                //             nodes: Object.values(result.nodes), edges: result.edges,
+                //             /* multiLevel: multiLevel */ };
+
+                //         return node;
+                //     });
                 edges = [ ];
             } else {
-                nodes = model.metabolites.reduce((prev, next) => {
-                    var type = { "name": "metabolite", "label": "Metabolite" };
-                    var node = { label: next.name, type: type,
-                        style: "metabolite-compartment-" + next.compartment };
-
-                    return { ...prev, [next.id]: node };
-                }, { })
-                edges = flatten(
-                    model.reactions
-                        .map(r => {
-                            var edges       = [ ];
-                            var edge_map    = { };
-
-                            for ( const reactant of r.reactants ) {
-                                for ( const product of r.products ) {
-                                    var target = nodes[reactant];
-                                    
-                                    const type = { "name": "reaction",
-                                        "label": "Reaction" };
-                                    const edge = {
-                                        source: nodes[product],
-                                        target: target,
-                                        type:   type,
-                                        label:  r.name
-                                    };
-
-                                    if ( !(reactant.id in edge_map) ) {
-                                        edge_map[reactant.id] = edge
-                                    } else {
-                                        edge.target = edge_map[reactant.id];
-                                    }
-
-                                    edges.push(edge);
-                                };
-                            };
-
-                            return edges;
-                        })
+                const result = get_metabolite_nodes_and_reaction_edges(
+                    model.metabolites, model.reactions
                 );
-                nodes = Object.values(nodes);
+                
+                nodes = result.nodes
+                edges = result.edges
             }
 
             var type    = { "name": "compartment",
@@ -562,10 +721,10 @@ require([
                 nodes: nodes, edges: edges, type: type, notes: notes,
                 /* multiLevel: multiLevel */ };
 
-            return Object.assign({ }, prev, { [next]: node });
+            return { ...prev, [next]: node };
         }, { });
-
-        const edges = flatten(
+        
+        const edges = fluxviz.util.array.flatten(
             compartments
                 .map(c => {
                     const compartment   = model.compartments[c];
@@ -583,9 +742,10 @@ require([
                 })
         )
 
-        fluxviz._graph.set(Object.values(nodes), edges, "force").then(() => {
-            fluxviz._graph.draw();
-        });
+        fluxviz.logger.info("Setting graph nodes and edges...");
+        await fluxviz._graph.set(Object.values(nodes), edges, "force");
+        fluxviz.logger.info("Rendering graph...");
+        fluxviz._graph.draw();
 
         var pathway = [ ];
         
@@ -600,8 +760,8 @@ require([
 
                 object      = object.node ? object.node : object.edge;
                 
-                console.log("On Mouse Move: ");
-                console.log(object);
+                fluxviz.logger.info("On Mouse Move: ");
+                fluxviz.logger.info(object);
                 
                 pathway.push(object);
 
@@ -625,20 +785,23 @@ require([
         });
 
         element.addEventListener("mouseleave", e => {
-            console.log("Resetting Pathways...");
+            fluxviz.logger.info("Resetting Pathways...");
             pathway = [ ];
-            console.log("Pathway resetted.");
+            fluxviz.logger.info("Pathway resetted.");
         });
 
-        console.log("Graph: ");
-        console.log("Nodes: ");
-        console.log(nodes);
-        console.log("Edges: ");
-        console.log(edges);
+        fluxviz.logger.info("Graph: ");
+        fluxviz.logger.info("Nodes: ");
+        fluxviz.logger.info(nodes);
+        fluxviz.logger.info("Edges: ");
+        fluxviz.logger.info(edges);
     };
+    
+    (async () => {
+        fluxviz.logger.warn("Rendering Model: ", $model);
+        fluxviz.logger.warn($model);
+        await fluxviz.render($model);
 
-    console.log("Rendering Model: ");
-    console.log($model);
-
-    fluxviz.render($model);
+        fluxviz.logger.info("Model rendered.");
+    })();
 });
