@@ -130,11 +130,20 @@ require([
 
     fluxviz.util.array.flatten  = arr => [].concat.apply([], arr);
 
+    const get_element_id = name => {
+        const prefix = "fluxviz-$id-";
+        const id     = prefix + name;
+
+        return id;
+    };
+
+    var TOOLTIP_ID  = "fluxviz-$id-tooltip";
+
     // ccnetviz plugins
     ccNetViz            = ccNetViz.default;
 
     const getSubGraphOnEvent = (graph, e) => {
-        var element = document.getElementById(CANVAS_ID);
+        var element     = document.getElementById(get_element_id("graph"));
         
         var boundingBox = element.getBoundingClientRect();
 
@@ -155,9 +164,6 @@ require([
         return result;
     }
 
-    var CANVAS_ID   = "fluxviz-$id-graph";
-    var TOOLTIP_ID  = "fluxviz-$id-tooltip";
-
     var DEFAULT_TOOLTIP_OPTIONS = {
         style: {
             position:               "absolute",
@@ -175,13 +181,6 @@ require([
             borderTopLeftRadius:    "calc(.3rem - 1px)",
             borderTopRightRadius:   "calc(.3rem - 1px)"
         }
-    };
-
-    const get_element_id = name => {
-        const prefix = "fluxviz-$id-";
-        const id     = prefix + name;
-
-        return id;
     };
 
     const get_or_create_element = id => {
@@ -562,7 +561,7 @@ require([
         const width           = 1024;
         const height          = width / ASPECT_RATIO;
         
-        const element         = document.getElementById(CANVAS_ID);
+        const element         = document.getElementById(get_element_id("graph"));
         element.width         = width;
         element.height        = height;
 
@@ -638,6 +637,11 @@ require([
                     label: {
                         hideSize: 2
                     }
+                }
+            },
+            {
+                "black": {
+                    color: randomColor({ format: "rgb" })
                 }
             }
         );
@@ -741,49 +745,87 @@ require([
                     return edges;
                 })
         )
+        
+        const history = { };
+        let   level   = 1;
 
-        fluxviz.logger.warn("Setting graph nodes and edges...");
-        await fluxviz._graph.set(Object.values(nodes), edges, "force");
-        fluxviz.logger.warn("Rendering graph...");
-        fluxviz._graph.draw();
+        const multilevel    = (element, graph) => {
+            element.addEventListener("click", async e => {
+                fluxviz.logger.info("Current Level (On Mouse Click): " + level);
+                fluxviz.logger.info("History (On Mouse Click): ");
+                fluxviz.logger.info(history);
 
-        const history = [ ];
+                const targets = getSubGraphOnEvent(graph, e);
+                
+                if ( targets.nodes.length == 1 ) {
+                    const node = targets.nodes[0].node;
 
-        element.addEventListener("click", async e => {
-            const targets = getSubGraphOnEvent(fluxviz._graph, e);
-            
-            if ( targets.nodes.length == 1 ) {
-                const node = targets.nodes[0].node;
+                    if ( node.nodes ) {
+                        const nodes     = node.nodes;
+                        const edges     = node.edges || [ ];
+                        
+                        const current   = graph.findArea(0, 0, 1, 1, true, true);
 
-                if ( node.nodes ) {
-                    const nodes     = node.nodes;
-                    const edges     = node.edges || [ ];
+                        history[level]  = {
+                            nodes: current.nodes.map(n => n.node),
+                            edges: current.edges.map(e => e.edge)
+                        };
+                            
+                        graph.setViewport({ size: 1, x: 0, y: 0 });
+                        await drawGraph(graph, nodes, edges, "force");
 
-                    const current   = fluxviz._graph.findArea(0, 0, 1, 1, true, true); 
-
-                    history.push(current.nodes);
-
-                    fluxviz._graph.setViewport({ size: 1, x: 0, y: 0 });
-                    fluxviz.logger.warn("Setting graph nodes and edges for next level...");
-                    await fluxviz._graph.set(fluxviz._graph, nodes, edges || [ ], "force");
-                    fluxviz.logger.warn("Re-rendering graph...");
-                    fluxviz._graph.draw();
+                        level           = level + 1;
+                    }
                 }
-            }
-        });
+            });
 
-        element.addEventListener("contextmenu", async e => {
-            e.preventDefault();
+            element.addEventListener("contextmenu", async e => {
+                fluxviz.logger.info("Current Level (On Mouse Right-Click): " + level);
+                fluxviz.logger.info("History (On Mouse Right-Click): ");
+                fluxviz.logger.info(history);
 
-            if ( history.length ) {
-                const { nodes, edges } = history.shift();
-                fluxviz._graph.setViewport({ size: 1, x: 0, y: 0 });
-                fluxviz.logger.warn("Setting graph nodes and edges for previous level...");
-                await fluxviz._graph.set(fluxviz._graph, nodes, edges || [ ], "force");
-                fluxviz.logger.warn("Re-rendering graph...");
-                fluxviz._graph.draw();
+                e.preventDefault();
+
+                fluxviz.logger.info("Rendering previous level...");
+
+                if ( level > 0 ) {
+                    level = level - 1;
+
+                    const { nodes, edges } = history[level];
+
+                    graph.setViewport({ size: 1, x: 0, y: 0 });
+                    await drawGraph(graph, nodes, edges, "force");
+                }
+            });
+        }
+
+        const plugins       = { multilevel };
+
+        const setGraph      = async (graph, nodes, edges, layout, options) => {
+            fluxviz.logger.warn("Setting graph nodes and edges...");
+            fluxviz.logger.info("Graph: ");
+            fluxviz.logger.info("Nodes: ");
+            fluxviz.logger.info(nodes);
+            fluxviz.logger.info("Edges: ");
+            fluxviz.logger.info(edges);
+
+            const set   = async () => {
+                for ( const plugin in plugins ) {
+                    fluxviz.logger.info("Setting up plugin: " + plugin)
+                    plugins[plugin](element, graph);
+                }
+
+                await graph.set(Object.values(nodes), edges, layout, options);
             }
-        });
+
+            await set();
+        }
+
+        const drawGraph = async (graph, nodes, edges, layout, options) => {
+            await setGraph(graph, nodes, edges, layout, options);
+            fluxviz.logger.warn("Rendering graph...");
+            graph.draw();
+        }
 
         let pathway = [ ];
         
@@ -828,11 +870,7 @@ require([
             fluxviz.logger.info("Pathway resetted.");
         });
 
-        fluxviz.logger.info("Graph: ");
-        fluxviz.logger.info("Nodes: ");
-        fluxviz.logger.info(nodes);
-        fluxviz.logger.info("Edges: ");
-        fluxviz.logger.info(edges);
+        await drawGraph(fluxviz._graph, nodes, edges, "force");
     };
     
     (async () => {
