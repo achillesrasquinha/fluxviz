@@ -142,16 +142,15 @@ require([
     // ccnetviz plugins
     ccNetViz            = ccNetViz.default;
 
-    const getSubGraphOnEvent = (graph, e) => {
-        var element     = document.getElementById(get_element_id("graph"));
-        
+    const getSubGraphOnEvent = (element, graph, e) => {
         var boundingBox = element.getBoundingClientRect();
 
         var x           = e.clientX - boundingBox.left;
         var y           = e.clientY - boundingBox.top;
         var radius      = 5;
 
-        var layerCoordinates = graph.getLayerCoords({ x: x, y: y, radius: radius });
+        var layerCoordinates = graph.getLayerCoords({ x: x, y: y,
+            radius: radius });
 
         var result           = graph.find(
             layerCoordinates.x,
@@ -454,10 +453,10 @@ require([
         const edges = fluxviz.util.array.flatten(
             reactions.map(r => {
                 const edges     = [ ]
-                const type      = { "name": "reaction", "label": "Reaction" };
+                const type      = "reaction-edge";
 
                 const reactants = r.reactants.filter(r => r in nodes.metabolites);
-                const products  = r.products.filter(p => p in nodes.metabolites);
+                const products  = r.products .filter(p => p in nodes.metabolites);
 
                 if ( reactants.length && products.length ) {
                     if ( reactants.length == 1 && products.length == 1 ) {
@@ -469,7 +468,6 @@ require([
                                 type:   type,
                                 source: nodes.metabolites[reactant],
                                 target: nodes.metabolites[product],
-                                label:  r.name || r.id,
                                 object: r
                             });
 
@@ -478,7 +476,6 @@ require([
                                     type:   type,
                                     source: nodes.metabolites[product],
                                     target: nodes.metabolites[reactant],
-                                    label:  r.name || r.id,
                                     object: r
                                 });
                             }
@@ -490,7 +487,6 @@ require([
                                     type:   type,
                                     source: nodes.metabolites[reactant],
                                     target: nodes.reactions[r.id],
-                                    label:  r.name || r.id,
                                     object: r,
                                     style:  "reaction-edge"
                                 });
@@ -500,7 +496,6 @@ require([
                                         type:   type,
                                         source: nodes.reactions[r.id],
                                         target: nodes.metabolites[reactant],
-                                        label:  r.name || r.id,
                                         object: r
                                     });
                                 }
@@ -513,7 +508,6 @@ require([
                                     type:   type,
                                     source: nodes.reactions[r.id],
                                     target: nodes.metabolites[product],
-                                    label:  r.name || r.id,
                                     object: r
                                 });
 
@@ -522,7 +516,6 @@ require([
                                         type:   type,
                                         source: nodes.metabolites[product],
                                         target: nodes.reactions[r.id],
-                                        label:  r.name || r.id,
                                         object: r,
                                         style:  "reaction-edge"
                                     });
@@ -533,7 +526,6 @@ require([
                 } else {
                     delete nodes.reactions[r.id];
                 }
-
                 
                 return edges;
             })
@@ -605,7 +597,9 @@ require([
             }, { }),
             compartments.reduce((prev, next) => {
                 var key     = "metabolite-compartment-" + next;
-                var style   = { color: get_color("compartment-" + next) }
+                var style   = {
+                    color: get_color("compartment-" + next)
+                }
                 var result  = { ...prev, [key]: style }
 
                 return result
@@ -627,7 +621,15 @@ require([
                 "reaction-edge": {
                     arrow: {
                         texture: ""
+                    },
+                    label: {
+                        
                     }
+                }
+            },
+            {
+                "reaction-edge-highlight": {
+                    color: "rgb(0,0,0)"
                 }
             },
             {
@@ -640,8 +642,8 @@ require([
                 }
             },
             {
-                "black": {
-                    color: randomColor({ format: "rgb" })
+                "opague": {
+                    color: "rgb(255, 255, 240)"
                 }
             }
         );
@@ -668,6 +670,9 @@ require([
                             },
                             type: "delta",
                             size: 12
+                        },
+                        label: {
+                            
                         }
                     }
                 },
@@ -735,9 +740,11 @@ require([
                     const edges         = [ ];
 
                     for ( const connection of compartment.connections ) {
-                        const to    = connection.compartment;
-                        const edge  = { source: nodes[c], target: nodes[to],
-                            style: "compartment-edge-" + c + "-" + to }
+                        const to        = connection.compartment;
+                        
+                        const edge      = { source: nodes[c], target: nodes[to],
+                            style: "compartment-edge-" + c + "-" + to,
+                            type: "compartment-edge" }
 
                         edges.push(edge);
                     }
@@ -749,13 +756,15 @@ require([
         const history = { };
         let   level   = 1;
 
-        const multilevel    = (element, graph) => {
+        const multiLevel    = (element, graph) => {
+            fluxviz.logger.warn("Setting up multi-level plugin...");
+            
             element.addEventListener("click", async e => {
                 fluxviz.logger.info("Current Level (On Mouse Click): " + level);
                 fluxviz.logger.info("History (On Mouse Click): ");
                 fluxviz.logger.info(history);
 
-                const targets = getSubGraphOnEvent(graph, e);
+                const targets = getSubGraphOnEvent(element, graph, e);
                 
                 if ( targets.nodes.length == 1 ) {
                     const node = targets.nodes[0].node;
@@ -770,6 +779,9 @@ require([
                             nodes: current.nodes.map(n => n.node),
                             edges: current.edges.map(e => e.edge)
                         };
+
+                        fluxviz.logger.info("History Level " + level);
+                        fluxviz.logger.info(history[level]);
                             
                         graph.setViewport({ size: 1, x: 0, y: 0 });
                         await drawGraph(graph, nodes, edges, "force");
@@ -799,23 +811,34 @@ require([
             });
         }
 
-        const plugins       = { multilevel };
+        const plugins       = { multiLevel };
 
         const setGraph      = async (graph, nodes, edges, layout, options) => {
             fluxviz.logger.warn("Setting graph nodes and edges...");
-            fluxviz.logger.info("Graph: ");
-            fluxviz.logger.info("Nodes: ");
-            fluxviz.logger.info(nodes);
-            fluxviz.logger.info("Edges: ");
-            fluxviz.logger.info(edges);
+            fluxviz.logger.warn("Graph: ");
+            fluxviz.logger.warn("Nodes: ");
+            fluxviz.logger.warn(nodes);
+            fluxviz.logger.warn("Edges: ");
+            fluxviz.logger.warn(edges);
 
             const set   = async () => {
-                for ( const plugin in plugins ) {
-                    fluxviz.logger.info("Setting up plugin: " + plugin)
-                    plugins[plugin](element, graph);
+                if ( !("plugin" in ccNetViz) ) {
+                    ccNetViz.plugin = { };
                 }
 
-                await graph.set(Object.values(nodes), edges, layout, options);
+                fluxviz.logger.warn("Setting up plugins...");
+                for ( const plugin in plugins ) {
+                    if ( !(plugin in ccNetViz.plugin) ) {
+                        fluxviz.logger.warn("Setting up plugin: " + plugin);
+                        ccNetViz.plugin[plugin] = plugins[plugin];
+                    }
+
+                    fluxviz.logger.warn("Initializing plugin: " + plugin);
+                    ccNetViz.plugin[plugin](element, graph);
+                }
+
+                fluxviz.logger.warn("Setting up graph...");
+                await graph.set(nodes, edges, layout, options);
             }
 
             await set();
@@ -827,50 +850,47 @@ require([
             graph.draw();
         }
 
-        let pathway = [ ];
+        const pathway = [ ];
         
         element.addEventListener("mousemove", e => {
-            var target  = getSubGraphOnEvent(fluxviz._graph, e);
-            var targets = target.nodes.length ? target.nodes : target.edges;
+            const target  = getSubGraphOnEvent(element, fluxviz._graph, e);
+            // prioritize nodes...
+            const targets = target.nodes.length ? target.nodes : target.edges;
             
             if ( targets.length ) {
-                var object  = targets.reduce(function (prev, next) {
-                    return prev.dist < next.dist ? prev : next;
-                });
+                let component = targets.reduce((prev, next) => prev.dist < next.dist ? prev : next);
+                let object    = null;
 
-                object      = object.node ? object.node : object.edge;
-                
+                if ( component.node ) {
+                    object      = component.node;
+                    object.node = true;
+                    object.edge = false;
+                } else {
+                    object      = component.edge;
+                    object.node = false;
+                    object.edge = true;
+                }
+
                 fluxviz.logger.info("On Mouse Move: ");
                 fluxviz.logger.info(object);
                 
-                pathway.push(object);
+                if ( object.node ) {
+                    fluxviz.logger.info("");
 
-                const title = object.label;
-                const label = object.type.label;
-                const notes = object.notes || { };
+                    pathway.push(object);
+                } else {
+                    fluxviz.logger.warn("Highlighting an edge...");
 
-                fluxviz.tooltip({
-                    title:  title,
-                    label:  label,
-                    body:   notes.body,
-                    show:   true,
-                    style: {
-                        left: (e.clientX - 10) + "px",
-                        top:  (e.clientY + 30) + "px"
+                    if ( object.type == "reaction-edge" ) {
+                        fluxviz.logger.warn("Highlighting a reaction...");
                     }
-                });
+                }
             } else {
                 fluxviz.tooltip({ show: false });
             }
         });
 
-        element.addEventListener("mouseleave", e => {
-            fluxviz.logger.info("Resetting Pathways...");
-            pathway = [ ];
-            fluxviz.logger.info("Pathway resetted.");
-        });
-
-        await drawGraph(fluxviz._graph, nodes, edges, "force");
+        await drawGraph(fluxviz._graph, Object.values(nodes), edges, "force");
     };
     
     (async () => {
