@@ -14,7 +14,7 @@
         "htmlcov": true,
     },
     "editor.rulers": [78],
-    "editor.fontFamily": "Consolas",
+    "editor.fontFamily": "Menlo, Consolas",
     "editor.tabSize": 4,
     "python.pythonPath": ".venv/bin/python",
     "python.linting.pylintPath": "${workspaceFolder}/.venv/bin/pylint"

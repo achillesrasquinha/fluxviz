@@ -1,14 +1,5 @@
 fluxviz.util.array.flatten  = arr => [].concat.apply([], arr);
 
-const get_element_id = name => {
-    const prefix = "fluxviz-$id-";
-    const id     = prefix + name;
-
-    return id;
-};
-
-var TOOLTIP_ID  = "fluxviz-$id-tooltip";
-
 // ccnetviz plugins
 const getSubGraphOnEvent = (element, graph, e) => {
     var boundingBox = element.getBoundingClientRect();
@@ -29,84 +20,6 @@ const getSubGraphOnEvent = (element, graph, e) => {
     );
 
     return result;
-}
-
-var DEFAULT_TOOLTIP_OPTIONS = {
-    style: {
-        position:               "absolute",
-        maxWidth:               "256px",
-        backgroundColor:        "#FFF",
-        borderRadius:           ".3rem",
-        border:                 "1px solid rgba(0,0,0,0.2)",
-        zIndex:                 99
-    },
-    headerStyle: {
-        padding:                ".5rem .75rem",
-        fontSize:               "1rem",
-        backgroundColor:        "#F7F7F7 !important",
-        borderBottom:           "1px solid #EBEBEB",
-        borderTopLeftRadius:    "calc(.3rem - 1px)",
-        borderTopRightRadius:   "calc(.3rem - 1px)"
-    }
-};
-
-const get_or_create_element = id => {
-    const element = document.getElementById(id);
-    
-    if ( !element ) {
-        const element = document.createElement("div");
-        element.setAttribute("id", id);
-
-        document.appendChild(element);
-    }
-
-    return element;
-};
-
-fluxviz.tooltip = options => {
-    options = deepmerge(DEFAULT_TOOLTIP_OPTIONS, options);
-
-    var element = document.getElementById(TOOLTIP_ID);
-    if ( !element ) {
-        var element     = document.createElement("div");
-        element.setAttribute("id", TOOLTIP_ID);
-    
-        document.body.appendChild(element);
-
-        var header      = document.createElement("div");
-        header.setAttribute("id", TOOLTIP_ID + "-header");
-
-        element.appendChild(header);
-
-        var body        = document.createElement("div");
-        body.setAttribute("id", TOOLTIP_ID + "-body");
-
-        element.appendChild(body);
-    };
-
-    element.style.display = options.show ? "block" : "none";
-    
-    if ( options.style ) {
-        for ( const type in options.style ) {
-            element.style[type] = options.style[type];
-        }
-    }
-
-    var header       = document.getElementById(TOOLTIP_ID + "-header");
-    header.innerHTML = "<h3>" + options.title + " " + options.label + "</h3>";
-    
-    if ( options.headerStyle ) {
-        for ( const type in options.headerStyle ) {
-            header.style[type] = options.style[type];
-        }
-    }
-    
-    var body        = document.getElementById(TOOLTIP_ID + "-body");
-}
-
-const footnote = options => {
-    const id        = get_element_id("footnote");
-    const element   = get_or_create_element(id);
 }
 
 const patch_model = model => {

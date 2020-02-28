@@ -1,0 +1,5 @@
+const generateID = () => {
+    
+};
+
+export { generateID };

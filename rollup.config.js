@@ -1,7 +1,8 @@
 import babel    from "rollup-plugin-babel";
-import resolve  from "@rollup/plugin-node-resolve"
-import commonjs from "@rollup/plugin-commonjs"
-import replace  from "@rollup/plugin-replace"
+import resolve  from "@rollup/plugin-node-resolve";
+import commonjs from "@rollup/plugin-commonjs";
+import replace  from "@rollup/plugin-replace";
+import globals  from "rollup-plugin-node-globals";
 
 import { getenv, getenvvar } from "./src/js/util/environment";
 
@@ -21,6 +22,7 @@ export default {
             extensions: [".js", ".jsx"],
         }),
         commonjs(),
+        globals(),
         replace({
             "process.env.NODE_ENV":                      JSON.stringify( getenv("NODE_ENV", "development", { prefix: null }) ),
             [`process.env.${getenvvar("ENVIRONMENT")}`]: getenv("ENVIRONMENT", "development")
