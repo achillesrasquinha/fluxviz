@@ -55,7 +55,7 @@ def patch_model(model):
 def plot(model):
     logger.info("Patching Model...")
     model       = patch_model(model)
-    logger.info("Model patched.");
+    logger.info("Model patched.")
 
     dict_       = model_to_dict(model)
     json_       = json.dumps(dict_)
@@ -74,7 +74,7 @@ def plot(model):
         shutil.copytree(directory, abspath)
 
     id_         = get_random_str()
-    javascript  = render_template("fluxviz.js",
+    javascript  = render_template("script.js",
         model = json_, id = id_
     )
 

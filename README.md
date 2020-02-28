@@ -60,6 +60,10 @@
 $ pip install fluxviz
 ```
 
+```shell
+$ npm install fluxviz
+```
+
 ### Usage
 
 #### Basic Usage

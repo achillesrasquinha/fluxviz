@@ -7,7 +7,9 @@ ENVIRONMENT			   ?= development
 
 PROJECT					= fluxviz
 
-PROJDIR					= ${BASEDIR}/src/fluxviz
+SRCDIR					= ${BASEDIR}/src
+PROJDIR					= ${SRCDIR}/fluxviz
+DISTDIR					= ${BASEDIR}/dist
 TESTDIR					= ${BASEDIR}/tests
 DOCSDIR					= ${BASEDIR}/docs
 NOTEBOOKSDIR			= ${DOCSDIR}/source/notebooks
@@ -29,6 +31,12 @@ SAFETY					= ${VENVBIN}/safety
 PRECOMMIT				= ${VENVBIN}/pre-commit
 SPHINXBUILD				= ${VENVBIN}/sphinx-build
 TWINE					= ${VENVBIN}/twine
+
+NODE_MODULES			= ${BASEDIR}/node_modules
+
+NODEBIN					= $(shell yarn bin)
+
+ROLLUP					= ${NODEBIN}/rollup
 
 JOBS				   ?= $(shell $(PYTHON) -c "import multiprocessing as mp; print(mp.cpu_count())")
 PYTHON_ENVIRONMENT      = $(shell $(PYTHON) -c "import sys;v=sys.version_info;print('py%s%s'%(v.major,v.minor))")
@@ -124,6 +132,14 @@ test: install ## Run tests.
 	$(call log,INFO,Running Python Tests using $(JOBS) jobs.)
 	$(TOX) --skip-missing-interpreters $(ARGS)
 
+js-test: ## Run JavaScript tests.
+	$(NODEBIN)/nyc $(NODEBIN)/mocha $(TESTDIR)/js \
+		--recursive \
+		--require @babel/register
+
+js-lint: ## Run JavaScript lint.
+	$(NODEBIN)/eslint
+
 coverage: install ## Run tests and display coverage.
 ifeq (${ENVIRONMENT},development)
 	$(eval IARGS := --cov-report html)
@@ -146,6 +162,13 @@ shell: ## Launch an IPython shell.
 
 build: clean ## Build the Distribution.
 	$(PYTHON) setup.py sdist bdist_wheel
+
+	$(ROLLUP) -c $(BASEDIR)/rollup.config.js
+
+	@cp $(DISTDIR)/js/fluxviz.js $(PROJDIR)/data/js/vendor
+
+watch: clean ## Watch for file changes and build.
+	$(ROLLUP) -c $(BASEDIR)/rollup.config.js --watch
 
 pre-commit: ## Perform Pre-Commit Tasks.
 	$(PRECOMMIT) run
@@ -202,3 +225,6 @@ notebooks: ## Launch Notebooks
 
 help: ## Show help and exit.
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
+samples: ## Launch samples
+	$(NODEBIN)/http-server $(BASEDIR)
