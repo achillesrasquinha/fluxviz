@@ -38,10 +38,6 @@
 	</a>
 </p>
 
-<div align="center">
-  <img src=".github/assets/demo.gif">
-</div>
-
 ### Table of Contents
 * [Features](#Features)
 * [Installation](#installation)
