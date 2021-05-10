@@ -168,7 +168,7 @@ endif
 
 	$(call log,INFO,Building Notebooks)
 	@find $(DOCSDIR)/source/notebooks -type f -name '*.ipynb' -not -path "*/.ipynb_checkpoints/*" | \
-		xargs jupyter nbconvert \
+		xargs $(JUPYTER) nbconvert \
 			--to notebook 		\
 			--inplace 			\
 			--execute 			\
