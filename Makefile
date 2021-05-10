@@ -1,4 +1,4 @@
-.PHONY: shell test help
+.PHONY: shell test help requirements
 
 BASEDIR					= $(shell pwd)
 -include ${BASEDIR}/.env
@@ -7,26 +7,28 @@ ENVIRONMENT			   ?= development
 
 PROJECT					= {{ slug }}
 
-PROJDIR					= ${BASEDIR}/src/pipupgrade
+PROJDIR					= ${BASEDIR}/src/{{ slug }}
 TESTDIR					= ${BASEDIR}/tests
 DOCSDIR					= ${BASEDIR}/docs
 
 PYTHONPATH		 	   ?= python
 
 VIRTUAL_ENV			   ?= ${BASEDIR}/.venv
-VENVBIN				   ?= ${VIRTUAL_ENV}/bin
+VENVBIN				   ?= ${VIRTUAL_ENV}/bin/
 
-PYTHON				   ?= ${VENVBIN}/python
-IPYTHON					= ${VENVBIN}/ipython
-PIP					   ?= ${VENVBIN}/pip
-PYTEST				   ?= ${VENVBIN}/pytest
-TOX						= ${VENVBIN}/tox
-COVERALLS			   ?= ${VENVBIN}/coveralls
-IPYTHON					= ${VENVBIN}/ipython
-SAFETY					= ${VENVBIN}/safety
-PRECOMMIT				= ${VENVBIN}/pre-commit
-SPHINXBUILD				= ${VENVBIN}/sphinx-build
-TWINE					= ${VENVBIN}/twine
+PYTHON				   ?= ${VENVBIN}python
+IPYTHON					= ${VENVBIN}ipython
+PIP					   ?= ${VENVBIN}pip
+PYTEST				   ?= ${VENVBIN}pytest
+TOX						= ${VENVBIN}tox
+COVERALLS			   ?= ${VENVBIN}coveralls
+IPYTHON					= ${VENVBIN}ipython
+SAFETY					= ${VENVBIN}safety
+PRECOMMIT				= ${VENVBIN}pre-commit
+SPHINXBUILD				= ${VENVBIN}sphinx-build
+TWINE					= ${VENVBIN}twine
+
+SQLITE					= sqlite
 
 JOBS				   ?= $(shell $(PYTHON) -c "import multiprocessing as mp; print(mp.cpu_count())")
 PYTHON_ENVIRONMENT      = $(shell $(PYTHON) -c "import sys;v=sys.version_info;print('py%s%s'%(v.major,v.minor))")
@@ -66,7 +68,13 @@ endif
 info: ## Display Information
 	@echo "Python Environment: ${PYTHON_ENVIRONMENT}"
 
-install: clean info ## Install dependencies and module.
+requirements: ## Build Requirements
+	$(call log,INFO,Building Requirements)
+	@find $(BASEDIR)/requirements -maxdepth 1 -type f | grep -v 'jobs' | xargs awk '{print}' > $(BASEDIR)/requirements-dev.txt
+	@find $(BASEDIR)/requirements -maxdepth 1 -type f | xargs awk '{print}' > $(BASEDIR)/requirements-jobs.txt
+	@cat $(BASEDIR)/requirements/production.txt  > $(BASEDIR)/requirements.txt
+
+install: clean info requirements ## Install dependencies and module.
 ifneq (${VERBOSE},true)
 	$(eval OUT = > /dev/null)
 endif
@@ -74,11 +82,6 @@ endif
 ifneq (${PIPCACHEDIR},)
 	$(eval PIPCACHEDIR := --cache-dir $(PIPCACHEDIR))
 endif
-
-	$(call log,INFO,Building Requirements)
-	@find $(BASEDIR)/requirements -maxdepth 1 -type f | xargs awk '{print}' > $(BASEDIR)/requirements-dev.txt
-	@cat $(BASEDIR)/requirements/production.txt  > $(BASEDIR)/requirements.txt
-	@cat $(BASEDIR)/requirements/production.txt $(BASEDIR)/requirements/test.txt > $(BASEDIR)/requirements-test.txt
 
 	$(call log,INFO,Installing Requirements)
 ifeq (${ENVIRONMENT},test)
@@ -124,7 +127,7 @@ console: install ## Open Console.
 
 test: install ## Run tests.
 	$(call log,INFO,Running Python Tests using $(JOBS) jobs.)
-	$(TOX) --skip-missing-interpreters $(ARGS)
+	$(TOX) $(ARGS)
 
 coverage: install ## Run tests and display coverage.
 ifeq (${ENVIRONMENT},development)
@@ -145,6 +148,10 @@ shell: ## Launch an IPython shell.
 	$(call log,INFO,Launching Python Shell)
 	$(IPYTHON) \
 		--no-banner
+
+dbshell:
+	$(call log,INFO,Launching SQLite Shell)
+	$(SQLITE) ~/.config/${PROJECT}/db.db
 
 build: clean ## Build the Distribution.
 	$(PYTHON) setup.py sdist bdist_wheel
@@ -191,6 +198,9 @@ ifeq (${ENVIRONMENT},development)
 else
 	$(TWINE) upload --repository-url https://upload.pypi.org/legacy/ $(BASEDIR)/dist/* 
 endif
+
+start: ## Start app.
+	$(PYTHON) -m flask run
 
 help: ## Show help and exit.
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
