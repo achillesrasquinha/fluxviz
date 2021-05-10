@@ -10,23 +10,25 @@ PROJECT					= {{ slug }}
 PROJDIR					= ${BASEDIR}/src/{{ slug }}
 TESTDIR					= ${BASEDIR}/tests
 DOCSDIR					= ${BASEDIR}/docs
+NOTEBOOKSDIR			= ${DOCSDIR}/source/notebooks
 
 PYTHONPATH		 	   ?= python
 
 VIRTUAL_ENV			   ?= ${BASEDIR}/.venv
 VENVBIN				   ?= ${VIRTUAL_ENV}/bin/
 
-PYTHON				   ?= ${VENVBIN}python
-IPYTHON					= ${VENVBIN}ipython
-PIP					   ?= ${VENVBIN}pip
-PYTEST				   ?= ${VENVBIN}pytest
-TOX						= ${VENVBIN}tox
-COVERALLS			   ?= ${VENVBIN}coveralls
-IPYTHON					= ${VENVBIN}ipython
-SAFETY					= ${VENVBIN}safety
-PRECOMMIT				= ${VENVBIN}pre-commit
-SPHINXBUILD				= ${VENVBIN}sphinx-build
-TWINE					= ${VENVBIN}twine
+PYTHON				   ?= ${VENVBIN}/python
+IPYTHON					= ${VENVBIN}/ipython
+PIP					   ?= ${VENVBIN}/pip
+JUPYTER					= ${VENVBIN}/jupyter
+PYTEST				   ?= ${VENVBIN}/pytest
+TOX						= ${VENVBIN}/tox
+COVERALLS			   ?= ${VENVBIN}/coveralls
+IPYTHON					= ${VENVBIN}/ipython
+SAFETY					= ${VENVBIN}/safety
+PRECOMMIT				= ${VENVBIN}/pre-commit
+SPHINXBUILD				= ${VENVBIN}/sphinx-build
+TWINE					= ${VENVBIN}/twine
 
 SQLITE					= sqlite
 
@@ -164,6 +166,14 @@ ifneq (${VERBOSE},true)
 	$(eval OUT = > /dev/null)
 endif
 
+	$(call log,INFO,Building Notebooks)
+	@find $(DOCSDIR)/source/notebooks -type f -name '*.ipynb' -not -path "*/.ipynb_checkpoints/*" | \
+		xargs $(JUPYTER) nbconvert \
+			--to notebook 		\
+			--inplace 			\
+			--execute 			\
+			--ExecutePreprocessor.timeout=300
+
 	$(call log,INFO,Building Documentation)
 	$(SPHINXBUILD) $(DOCSDIR)/source $(DOCSDIR)/build $(OUT)
 
@@ -201,6 +211,9 @@ endif
 
 start: ## Start app.
 	$(PYTHON) -m flask run
+
+notebooks: ## Launch Notebooks
+	$(JUPYTER) notebook --notebook-dir $(NOTEBOOKSDIR)
 
 help: ## Show help and exit.
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
