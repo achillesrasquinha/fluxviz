@@ -17,18 +17,18 @@ PYTHONPATH		 	   ?= python
 VIRTUAL_ENV			   ?= ${BASEDIR}/.venv
 VENVBIN				   ?= ${VIRTUAL_ENV}/bin/
 
-PYTHON				   ?= ${VENVBIN}/python
-IPYTHON					= ${VENVBIN}/ipython
-PIP					   ?= ${VENVBIN}/pip
-JUPYTER					= ${VENVBIN}/jupyter
-PYTEST				   ?= ${VENVBIN}/pytest
-TOX						= ${VENVBIN}/tox
-COVERALLS			   ?= ${VENVBIN}/coveralls
-IPYTHON					= ${VENVBIN}/ipython
-SAFETY					= ${VENVBIN}/safety
-PRECOMMIT				= ${VENVBIN}/pre-commit
-SPHINXBUILD				= ${VENVBIN}/sphinx-build
-TWINE					= ${VENVBIN}/twine
+PYTHON				   ?= ${VENVBIN}python
+IPYTHON					= ${VENVBIN}ipython
+PIP					   ?= ${VENVBIN}pip
+PYTEST				   ?= ${VENVBIN}pytest
+TOX						= ${VENVBIN}tox
+COVERALLS			   ?= ${VENVBIN}coveralls
+IPYTHON					= ${VENVBIN}ipython
+JUPYTER					= ${VENVBIN}jupyter
+SAFETY					= ${VENVBIN}safety
+PRECOMMIT				= ${VENVBIN}pre-commit
+SPHINXBUILD				= ${VENVBIN}sphinx-build
+TWINE					= ${VENVBIN}twine
 
 SQLITE					= sqlite
 
@@ -168,7 +168,7 @@ endif
 
 	$(call log,INFO,Building Notebooks)
 	@find $(DOCSDIR)/source/notebooks -type f -name '*.ipynb' -not -path "*/.ipynb_checkpoints/*" | \
-		xargs $(JUPYTER) nbconvert \
+		xargs jupyter nbconvert \
 			--to notebook 		\
 			--inplace 			\
 			--execute 			\
