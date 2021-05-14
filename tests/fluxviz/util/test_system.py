@@ -5,11 +5,12 @@ from   distutils.spawn import find_executable
 
 # imports - test imports
 import pytest
+from testutils import PATH
 
 # imports - module imports
 from fluxviz.util.system import (read, write, popen, which, makedirs,
-    environment, touch)
-from fluxviz._compat     import string_types
+    touch, check_gzip)
+from fluxviz._compat import string_types
 
 def test_read(tmpdir):
     directory = tmpdir.mkdir("tmp")
@@ -46,6 +47,7 @@ def test_write(tmpdir):
     write(path, next_, force = True)
     assert tempfile.read() == next_
 
+@pytest.mark.skipif(os.name == "nt", reason = "requires a UNIX-based OS to run on.")
 def test_popen(tmpdir):
     directory = tmpdir.mkdir("tmp")
     dirpath   = string_types(directory)
@@ -84,7 +86,7 @@ def test_popen(tmpdir):
 
 def test_which():
     assert which("foobar") == None
-    assert which("python") == find_executable("python")
+    assert which("python") != None
 
     with pytest.raises(ValueError) as e:
         which("foobar", raise_err = True)
@@ -102,13 +104,6 @@ def test_makedirs(tmpdir):
     with pytest.raises(OSError):
         makedirs(path)
 
-def test_environment():
-    details = environment()
-
-    assert all((k in details for k in ("python_version", "os")))
-
-    return details
-
 def test_touch(tmpdir):
     directory = tmpdir.mkdir("tmp")
     path      = osp.join(string_types(directory), "foo")
@@ -117,3 +112,13 @@ def test_touch(tmpdir):
 
     touch(path)
     assert osp.exists(path)
+
+def test_check_gzip():
+    path_gzip = osp.join(PATH["DATA"], "sample.txt.gz")
+    path_txt  = osp.join(PATH["DATA"], "sample.txt")
+
+    assert check_gzip(path_gzip)
+    assert not check_gzip(path_txt, raise_err = False)
+    
+    with pytest.raises(ValueError):
+        check_gzip(path_txt)

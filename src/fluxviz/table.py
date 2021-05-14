@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 # imports - compatibility imports
 from fluxviz._compat     import zip_longest, string_types
 
@@ -28,7 +30,7 @@ def tabulate(rows):
 
     return result, sizes
 
-class Table:
+class Table(object):
     def __init__(self, header = None):
         self.rows   = [ ]
         self.header = header or [ ]

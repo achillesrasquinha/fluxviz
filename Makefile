@@ -124,9 +124,6 @@ else
 	$(call log,SUCCESS,Nothing to clean)
 endif
 
-console: install ## Open Console.
-	$(IPYTHON)
-
 test: install ## Run tests.
 	$(call log,INFO,Running Python Tests using $(JOBS) jobs.)
 	$(TOX) $(ARGS)
@@ -146,7 +143,7 @@ ifeq (${ENVIRONMENT},test)
 	$(COVERALLS)
 endif
 
-shell: ## Launch an IPython shell.
+shell: install ## Launch an IPython shell.
 	$(call log,INFO,Launching Python Shell)
 	$(IPYTHON) \
 		--no-banner
@@ -165,7 +162,7 @@ docs: install ## Build Documentation
 ifneq (${VERBOSE},true)
 	$(eval OUT = > /dev/null)
 endif
-
+	
 	$(call log,INFO,Building Notebooks)
 	@find $(DOCSDIR)/source/notebooks -type f -name '*.ipynb' -not -path "*/.ipynb_checkpoints/*" | \
 		xargs $(JUPYTER) nbconvert \
@@ -198,6 +195,12 @@ docker-tox: clean ## Test using Docker Tox Image.
 	@docker run --rm -v $(TMPDIR):/app themattrix/tox
 
 	@rm -rf  $(TMPDIR)
+
+bump: test ## Bump Version
+	$(BUMPVERSION) \
+		--current-version $(shell cat $(PROJDIR)/VERSION) \
+		$(TYPE) \
+		$(PROJDIR)/VERSION 
 
 release: ## Create a Release
 	$(PYTHON) setup.py sdist bdist_wheel

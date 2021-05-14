@@ -1,14 +1,23 @@
+from __future__ import absolute_import
+
 import sys
 import os, os.path as osp
 import subprocess
 
 PY2 = sys.version_info.major == 2
 
+<<<<<<< HEAD
 try:
     FileNotFoundError
 except NameError:
     if PY2:
         FileNotFoundError = OSError
+=======
+    
+if PY2:
+    
+    FileNotFoundError = OSError
+>>>>>>> template/master
 
 def read(fname):
     with open(fname) as f:
@@ -63,11 +72,11 @@ path["version"]             = osp.join(path["base"], "VERSION")
 
 __name__                    = "fluxviz"
 __command__                 = "fluxviz"
-__version__                 = strip(read(path["version"]))
-__build__                   = get_revision(pardir(path["base"], 2), short = True, raise_err = False)
-__url__                     = "https://github.com/achillesrasquinha/fluxviz"
+__version__                 = read(osp.join(pardir(__file__), "VERSION"))
+__build__                   = get_revision(pardir(__file__, 2), short = True, raise_err = False)
 __author__                  = "Achilles Rasquinha"
 __email__                   = "achillesrasquinha@gmail.com"
-__description__             = "UPGRADE ALL THE PIP PACKAGES!"
-__keywords__                = ["pip", "update", "upgrade", "cli", "command"]
-__license__                 = "MIT"
+__description__             = "An visualizer for metabolic pathways"
+__keywords__                = ['sbml', 'visualizer']
+__url__                     = "https://github.com/achillesrasquinha/fluxviz"
+__license__                 = "MIT License"

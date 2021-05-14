@@ -15,7 +15,6 @@ from fluxviz.util.environ  import getenv
 from fluxviz.cli           import util as _cli
 from fluxviz.cli.formatter import ArgumentParserFormatter
 from fluxviz.cli.util      import _CAN_ANSI_FORMAT
-from fluxviz._pip          import _PIP_EXECUTABLES
 
 _DESCRIPTION_JUMBOTRON = \
 """
@@ -35,14 +34,6 @@ def get_parser():
         add_help        = False,
         formatter_class = ArgumentParserFormatter
     )
-    parser.add_argument("packages",
-        nargs   = "*",
-        help    = "Packages to Upgrade."
-    )
-    parser.add_argument("--pip-path",
-        action  = "append",
-        help    = "Path to pip executable to be used."
-    )
     parser.add_argument("-y", "--yes",
         action  = "store_true",
         default = getenv("ACCEPT_ALL_DIALOGS", False),
@@ -51,97 +42,17 @@ def get_parser():
     parser.add_argument("-c", "--check",
         action  = "store_true",
         default = getenv("DRY_RUN", False),
-        help    = "Perform a dry-run, avoid updating packages."
-    )
-    parser.add_argument("-l", "--latest",
-        action  = "store_true",
-        default = getenv("UPDATE_LATEST", False),
-        help    = "Update all packages to latest."
-    )
-    parser.add_argument("-f", "--format",
-        choices = ["table", "tree", "json", "yaml"],
-        help    = "Display packages format.",
-        default = getenv("DISPLAY_FORMAT", "table")
-    )
-    parser.add_argument("-a", "--all",
-        action  = "store_true",
-        default = getenv("DISPLAY_ALL_PACKAGES", False),
-        help    = "List all packages."
-    )
-    parser.add_argument("--pip",
-        action  = "store_true",
-        default = getenv("UPDATE_PIP", False),
-        help    = "Update pip."
-    )
-    parser.add_argument("-s", "--self",
-        action  = "store_true",
-        help    = "Update %s." % __name__
-    )
-    parser.add_argument("-r", "--requirements",
-        action  = "append",
-        help    = "Path(s) to requirements.txt file."
-    )
-    parser.add_argument("--pipfile",
-        action  = "append",
-        help    = "Path(s) to Pipfile"
+        help    = "Perform a dry-run."
     )
     parser.add_argument("-i", "--interactive",
         action  = "store_true",
         default = getenv("INTERACTIVE", False),
         help    = "Interactive Mode."
     )
-    parser.add_argument("-p", "--project",
-        action  = "append",
-        help    = "Path(s) to Project"
-    )
-    parser.add_argument("--git-username",
-        help    = "Git Username",
-        default = getenv("GIT_USERNAME")
-    )
-    parser.add_argument("--git-email",
-        help    = "Git Email",
-        default = getenv("GIT_EMAIL")
-    )
-    parser.add_argument("--pull-request",
-        action  = "store_true",
-        help    = "Perform a Pull Request."
-    )
-    parser.add_argument("--github-access-token",
-        help    = "GitHub Access Token",
-        default = getenv("GITHUB_ACCESS_TOKEN")
-    )
-    parser.add_argument("--github-reponame",
-        help    = "Target GitHub Repository Name",
-        default = getenv("GITHUB_REPONAME")
-    )
-    parser.add_argument("--github-username",
-        help    = "Target GitHub Username",
-        default = getenv("GITHUB_USERNAME")
-    )
-    parser.add_argument("--target-branch",
-        help    = "Target Branch",
-        default = getenv("TARGET_BRANCH", "master")
-    )
     parser.add_argument("-j", "--jobs",
         type    = int,
         help    = "Number of Jobs to be used.",
-        default = getenv("JOBS", mp.cpu_count())
-    )
-    parser.add_argument("-u", "--user",
-        action  = "store_true",
-        default = getenv("USER_ONLY", False),
-        help    = "Install to the Python user install directory for environment \
-                    variables and user configuration."
-    )
-    parser.add_argument("--no-included-requirements",
-        action  = "store_true",
-        default = getenv("NO_INCLUDED_REQUIREMENTS", False),
-        help    = "Avoid updating included requirements."
-    )
-    parser.add_argument("--no-cache",
-        action  = "store_true",
-        default = getenv("NO_CACHE", False),
-        help    = "Avoid fetching latest updates from PyPI server."
+        default = getenv("JOBS", max(mp.cpu_count(), 4))
     )
     parser.add_argument("-o", "--output",
         default = getenv("OUTPUT_FILE"),
@@ -150,12 +61,12 @@ def get_parser():
     parser.add_argument("--ignore-error",
         action  = "store_true",
         default = getenv("IGNORE_ERROR", False),
-        help    = "Ignore Error in case of upgrade failure."
+        help    = "Ignore Error in case of failure."
     )
     parser.add_argument("--force",
         action  = "store_true",
         default = getenv("FORCE", False),
-        help    = "Force search for files within a project."
+        help    = "Force."
     )
 
     if _CAN_ANSI_FORMAT or "pytest" in sys.modules:
@@ -167,7 +78,8 @@ def get_parser():
 
     parser.add_argument("-V", "--verbose",
         action  = "store_true",
-        help    = "Display verbose output."
+        help    = "Display verbose output.",
+        default = getenv("VERBOSE", False)
     )
     parser.add_argument("-v", "--version",
         action  = "version",

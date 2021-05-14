@@ -1,7 +1,7 @@
 # pylint: disable=E1101
 
 # imports - compatibility imports
-from fluxviz._compat import _is_python_version
+from fluxviz._compat import _is_python_version, range
 
 # imports - standard imports
 import itertools
@@ -18,7 +18,7 @@ def squash(seq):
     return value
 
 def flatten(arr):
-    if _is_python_version(major = 2, minor = 6):
+    if _is_python_version(major = 2, minor = 6): # pragma: no cover
         chainer = itertools.chain.from_iterable
     else:
         chainer = itertools.chain
@@ -34,3 +34,7 @@ def sequencify(value, type_ = list):
     value = type_(value)
         
     return value
+
+def chunkify(arr, n):
+    for i in range(0, len(arr), n):
+        yield arr[i:i + n]

@@ -26,7 +26,7 @@ def get(*args, **kwargs):
 
     try:
         import requests as req
-        return req.get(*args, **kwargs)
+        return req.get(*args, **kwargs) # pragma: no cover
     except (ImportError, ModuleNotFoundError):
         url      = args[0]
         response = Response()
@@ -53,7 +53,7 @@ def post(*args, **kwargs):
 
     try:
         import requests as req
-        return req.post(*args, **kwargs)
+        return req.post(*args, **kwargs) # pragma: no cover
     except (ImportError, ModuleNotFoundError):
         url      = args[0]
         data     = kwargs.get("data",    { })

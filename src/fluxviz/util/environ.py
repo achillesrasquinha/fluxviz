@@ -43,3 +43,7 @@ def value_to_envval(value):
 			raise TypeError("Unknown parameter type %s with value %r" % (value, type(value)))
 
 	return value
+
+SECRETS = (
+	getenvvar("JOBS_GITHUB_TOKEN"),
+)

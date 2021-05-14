@@ -5,7 +5,7 @@ import pytest
 from fluxviz.util.environ import getenvvar, getenv, value_to_envval
 
 def test_getenvvar():
-    assert getenvvar("FOOBAR")                  == "fluxviz_FOOBAR"
+    assert getenvvar("FOOBAR")                  == "FLUXVIZ_FOOBAR"
     assert getenvvar("FOOBAR", prefix = False)  == "FOOBAR"
 
 def test_getenv():

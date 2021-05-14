@@ -2,36 +2,49 @@
 from fluxviz._compat import iteritems
 
 # imports - standard imports
-import os, os.path as osp
+import sys, os, os.path as osp
 import errno
 import platform
-import shutil
 import subprocess  as sp
+import shutil
+import tempfile
+import contextlib
 from   distutils.spawn import find_executable
 
 # imports - module imports
-from fluxviz.exception   import PopenError
-from fluxviz.util.string import strip, safe_decode
-from fluxviz._compat     import iteritems
-from fluxviz.log         import get_logger
-from fluxviz._compat     import string_types
+from fluxviz.exception       import PopenError
+from fluxviz.util.string     import strip, safe_decode
+from fluxviz.util.environ    import SECRETS
+from fluxviz._compat         import iteritems, PY2
+from fluxviz.log             import get_logger
 
 logger = get_logger()
 
-def read(fname):
-    with open(fname) as f:
+__STDOUT__ = None
+
+def read(fname, mode = None):
+    with open(fname, mode = mode or "r") as f:
         data = f.read()
     return data
 
-def write(fname, data = None, force = False, append = False):
+def write(fname, data = None, force = False, append = False, mode = None):
     if not osp.exists(fname) or append or force:
-        with open(fname, mode = "a" if append else "w") as f:
+        with open(fname, mode = mode or ("a" if append else "w")) as f:
             if data:
                 f.write(data)
 
 def which(executable, raise_err = False):
-    exec_ = find_executable(executable)
-    
+    exec_ = None
+
+    if not PY2:
+        try:
+            exec_ = shutil.which(executable)
+        except shutil.Error: # pragma: no cover
+            pass
+
+    if not exec_:
+        exec_ = find_executable(executable)
+        
     if not exec_ and raise_err:
         raise ValueError("Executable %s not found." % exec_)
     
@@ -66,7 +79,7 @@ def popen(*args, **kwargs):
     
     proc        = sp.Popen(command,
         bufsize = -1,
-        stdin   = sp.PIPE if output else None,
+        stdin   = sp.PIPE if output else kwargs.get("stdin"),
         stdout  = sp.PIPE if output else None,
         stderr  = sp.PIPE if output else None,
         env     = environ,
@@ -104,14 +117,6 @@ def makedirs(dirs, exist_ok = False):
         if not exist_ok or e.errno != errno.EEXIST:
             raise
 
-def environment():
-    environ = dict()
-    
-    environ["python_version"]   = platform.python_version()
-    environ["os"]               = platform.platform()
-
-    return environ
-
 def touch(filename):
     if not osp.exists(filename):
         with open(filename, "w") as f:
@@ -134,3 +139,22 @@ def remove(path, recursive = False, raise_err = True):
         except OSError:
             if raise_err:
                 raise
+                
+@contextlib.contextmanager
+def make_temp_dir():
+    dir_path = tempfile.mkdtemp()
+    yield dir_path
+    shutil.rmtree(dir_path)
+
+def check_gzip(f, raise_err = True):
+    if osp.exists(f):
+        with open(f, "rb") as f:
+            content = f.read(2)
+            
+            if content == b"\x1f\x8b":
+                return True
+            else:
+                if raise_err:
+                    raise ValueError("File %s is not a gzip file." % f)
+
+    return False

@@ -3,7 +3,7 @@ import os.path as osp
 import sqlite3
 
 # imports - module imports
-from fluxviz.__attr__    import __name__ as NAME
+from fluxviz.config      import PATH
 from fluxviz.util.string import strip
 from fluxviz.util.system import makedirs, read
 from fluxviz             import config, log
@@ -23,7 +23,7 @@ def _get_queries(buffer):
 
     return queries
 
-class DB:
+class DB(object):
     def __init__(self, path, timeout = 10):
         self.path        = path
         self._connection = None
@@ -44,8 +44,14 @@ class DB:
         if not self.connected:
             self.connect()
 
-        cursor  = self._connection.cursor()
-        cursor.execute(*args, **kwargs)
+        script      = kwargs.pop("script", False)
+        generate    = kwargs.pop("generate", False)
+
+        cursor      = self._connection.cursor()
+        getattr(cursor,
+            "execute%s" % ("script" if script else "")
+        )(*args, **kwargs)
+
         self._connection.commit()
 
         results = cursor.fetchall()
@@ -67,13 +73,15 @@ def get_connection(bootstrap = True, log = False):
         if log:
             logger.info("Establishing a DataBase connection...")
 
-        basepath    = osp.join(osp.expanduser("~"), ".%s" % NAME)
+        basepath = PATH["CACHE"]
         makedirs(basepath, exist_ok = True)
 
-        abspath     = osp.join(basepath, "db.db")
+        abspath  = osp.join(basepath, "db.db")
 
         _CONNECTION = DB(abspath)
-        _CONNECTION.connect(detect_types = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
+        _CONNECTION.connect(
+            detect_types = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
+        )
 
         if bootstrap:
             if log:
