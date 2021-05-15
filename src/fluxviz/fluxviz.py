@@ -7,6 +7,7 @@ from fluxviz._compat    import iterkeys
 import os, os.path as osp
 import json
 import shutil
+import collections
 
 # imports - third-party imports
 from IPython.display    import HTML
@@ -20,8 +21,10 @@ from fluxviz.constant       import PATH
 from fluxviz._compat        import iterkeys
 
 def plot(model):
-    dict_       = model_to_dict(model)
-    json_       = json.dumps(dict_)
+    if not isinstance(model, collections.Mapping):
+        model = model_to_dict(model)
+    
+    json_ = json.dumps(model)
 
     directories = [
         osp.join(PATH["DATA"], "images"),
@@ -37,7 +40,7 @@ def plot(model):
         shutil.copytree(directory, abspath)
 
     id_         = get_random_str()
-    javascript  = render_template("fluxviz.js",
+    javascript  = render_template("main.js",
         model = json_, id = id_
     )
 

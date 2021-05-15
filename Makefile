@@ -12,6 +12,8 @@ TESTDIR					= ${BASEDIR}/tests
 DOCSDIR					= ${BASEDIR}/docs
 NOTEBOOKSDIR			= ${DOCSDIR}/source/notebooks
 
+JSSRCDIR				= ${BASEDIR}/js
+
 PYTHONPATH		 	   ?= python
 
 VIRTUAL_ENV			   ?= ${BASEDIR}/.venv
@@ -152,6 +154,10 @@ dbshell:
 	$(call log,INFO,Launching SQLite Shell)
 	$(SQLITE) ~/.config/${PROJECT}/db.db
 
+build-js:
+	cd $(JSSRCDIR); yarn build; cd $(BASEDIR)
+	cp $(JSSRCDIR)/dist/fluxviz.js $(PROJDIR)/data/js/vendor/fluxviz.js
+
 build: clean ## Build the Distribution.
 	$(PYTHON) setup.py sdist bdist_wheel
 
@@ -216,7 +222,7 @@ start: ## Start app.
 	$(PYTHON) -m flask run
 
 notebooks: ## Launch Notebooks
-	$(JUPYTER) notebook --notebook-dir $(NOTEBOOKSDIR)
+	$(JUPYTER) notebook --notebook-dir $(NOTEBOOKSDIR) $(ARGS)
 
 help: ## Show help and exit.
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)

@@ -1,2 +1,3 @@
 scipy
 cobra
+git+git://github.com/achillesrasquinha/sbml2json#egg=sbml2json

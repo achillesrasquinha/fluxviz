@@ -9,3 +9,6 @@ class PopenError(FluxVizError, sp.CalledProcessError):
 
 class TemplateNotFoundError(FluxVizError):
     pass
+
+class DependencyNotFoundError(ImportError):
+    pass

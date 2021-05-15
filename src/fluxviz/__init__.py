@@ -19,6 +19,7 @@ from fluxviz.__attr__ import (
 from fluxviz.__main__    import main
 from fluxviz.config      import Settings
 from fluxviz.util.jobs   import run_all as run_all_jobs, run_job
+from fluxviz.fluxviz     import plot
 
 settings = Settings()
 

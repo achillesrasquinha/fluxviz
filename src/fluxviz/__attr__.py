@@ -6,18 +6,8 @@ import subprocess
 
 PY2 = sys.version_info.major == 2
 
-<<<<<<< HEAD
-try:
-    FileNotFoundError
-except NameError:
-    if PY2:
-        FileNotFoundError = OSError
-=======
-    
 if PY2:
-    
     FileNotFoundError = OSError
->>>>>>> template/master
 
 def read(fname):
     with open(fname) as f:
