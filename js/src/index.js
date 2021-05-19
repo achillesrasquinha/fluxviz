@@ -16,6 +16,8 @@ import ccNetViz from "ccnetviz";
 import randomColor from "randomcolor";
 import deepmerge from "deepmerge";
 
+import metabolitePositions from "./position.json"
+
 const fluxviz = {
 	util: {
 		array: { }
@@ -333,7 +335,7 @@ const patch_model = model => {
 					}
 				}
 				
-				reaction.stoichiometry			= reaction.metabolites;
+				reaction.stoichiometry		= reaction.metabolites;
 
 				reaction.metabolites        = metabolites;
 				
@@ -341,8 +343,8 @@ const patch_model = model => {
 				
 				reaction.subsystems         = [reaction.subsystem];
 
-				reaction.reactants					= reactants;
-				reaction.products						= products;
+				reaction.reactants			= reactants;
+				reaction.products			= products;
 				
 				reaction.compartments       = Array.from(new Set(compartments));
 
@@ -496,6 +498,21 @@ const get_metabolite_nodes_and_reaction_edges = (metabolites, reactions) => {
 						style: "metabolite-compartment-" + m.compartment,
 						object: m };
 
+				if ( m.id in metabolitePositions ) {
+					const positions = metabolitePositions[m.id];
+
+					if ( positions ) {
+						let position = positions[0];
+						let [x, y] = position;
+						
+						x = x / 1441;
+						y = y / 933;
+
+						node.x = x;
+						node.y = y;
+					}
+				}
+
 				nodes.metabolites[m.id] = node;
 		}
 
@@ -504,6 +521,7 @@ const get_metabolite_nodes_and_reaction_edges = (metabolites, reactions) => {
 				const type 	= { "name": "reaction", "label": "Reaction" };
 				const node 	= { label: r.id, type: type,
 						style: "reaction-node", object: r };
+						// x: Math.random(), y: Math.random() };
 
 				nodes.reactions[r.id] = node;
 		}
@@ -630,7 +648,7 @@ export const render = async (element, model, { styles = { } } = { }) => {
 
 		const compartments    = Object.keys(model.compartments);
 
-		styles              = Object.assign({ },
+		styles = Object.assign({ },
 				{
 					"reaction-edge": {
 						arrow: {
@@ -721,7 +739,8 @@ export const render = async (element, model, { styles = { } } = { }) => {
 										label: subsystem.name,
 										type: type,
 										style: "subsystem-" + subsystem.name,
-										nodes: Object.values(result.nodes), edges: result.edges };
+										nodes: Object.values(result.nodes), edges: result.edges,
+										x: Math.random(), y: Math.random() };
 	
 								return node;
 							}
@@ -730,7 +749,7 @@ export const render = async (element, model, { styles = { } } = { }) => {
 							edges = [ ];
 					} else {
 							const result = get_metabolite_nodes_and_reaction_edges(
-									model.metabolites, model.reactions
+								model.metabolites, model.reactions
 							);
 							
 							nodes = result.nodes
@@ -750,7 +769,8 @@ export const render = async (element, model, { styles = { } } = { }) => {
 							_id: `compartment:${next}`,
 							label: compartment.name,
 							style: "compartment-" + next, 
-							nodes: nodes, edges: edges, type: type, notes: notes };
+							nodes: nodes, edges: edges, type: type, notes: notes,
+							x: Math.random(), y: Math.random() };
 	
 					return { [next]: node };
 			}),
@@ -879,7 +899,7 @@ export const render = async (element, model, { styles = { } } = { }) => {
 		}
 
 		const drawGraph = async (graph, nodes, edges, layout, options) => {
-				await setGraph(graph, nodes, edges, layout, options);
+				await setGraph(graph, nodes, edges, null, options);
 				fluxviz.logger.warn("Rendering graph...");
 				graph.draw();
 		}

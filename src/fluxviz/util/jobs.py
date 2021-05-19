@@ -15,7 +15,12 @@ settings = Settings()
 logger   = log.get_logger()
 
 JOBS = [
-    
+    {
+        "name": "bigg_connector"
+    },
+    {
+        "name": "build_pathway_info",
+    }
 ]
 
 def run_job(name, variables = None):

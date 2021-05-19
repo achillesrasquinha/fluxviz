@@ -68,9 +68,9 @@ def popen(*args, **kwargs):
         environ.update(environment)
 
     for k, v in iteritems(environ):
-        environ[k] = string_types(v)
+        environ[k] = str(v)
 
-    command     = " ".join([string_types(arg) for arg in args])
+    command     = " ".join([str(arg) for arg in args])
 
     logger.info("Executing command: %s" % command)
 

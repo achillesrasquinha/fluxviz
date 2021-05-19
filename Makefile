@@ -78,7 +78,10 @@ requirements: ## Build Requirements
 	@find $(BASEDIR)/requirements -maxdepth 1 -type f | xargs awk '{print}' > $(BASEDIR)/requirements-jobs.txt
 	@cat $(BASEDIR)/requirements/production.txt  > $(BASEDIR)/requirements.txt
 
-install: clean info requirements ## Install dependencies and module.
+install-js: ## Install JS dependencies.
+	cd $(JSSRCDIR); yarn install; cd $(BASEDIR)
+
+install: clean info requirements install-js ## Install dependencies and module.
 ifneq (${VERBOSE},true)
 	$(eval OUT = > /dev/null)
 endif
