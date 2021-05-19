@@ -1,5 +1,4 @@
-# imports - compatibility imports
-from fluxviz._compat import string_types
+from __future__ import absolute_import
 
 def _render_tree(node, depth = 0, indent = 2, formatter = None):
     spacing     = (indent * " ") * depth
@@ -99,7 +98,7 @@ class Node(object):
             self.add_child(child)
 
     def __repr__(self):
-        repr_ = "<Node '%s'%s>" % (string_types(self.obj), 
+        repr_ = "<Node '%s'%s>" % (str(self.obj), 
             "parent='%s'" % self.parent if self.parent else "")
         return repr_
 

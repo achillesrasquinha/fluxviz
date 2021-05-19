@@ -71,7 +71,6 @@ def popen(*args, **kwargs):
         environ[k] = str(v)
 
     command     = " ".join([str(arg) for arg in args])
-
     logger.info("Executing command: %s" % command)
 
     if quiet:
@@ -139,7 +138,7 @@ def remove(path, recursive = False, raise_err = True):
         except OSError:
             if raise_err:
                 raise
-                
+
 @contextlib.contextmanager
 def make_temp_dir():
     dir_path = tempfile.mkdtemp()

@@ -15,7 +15,7 @@ from fluxviz.util._dict     import merge_dict
 from fluxviz.util.system   	import (read, write, touch, popen, which)
 from fluxviz.util.environ  	import getenvvar
 from fluxviz.util.datetime 	import get_timestamp_str
-from fluxviz.util.imports   import import_handler
+from fluxviz.util.imports   import import_or_raise
 from fluxviz 		      	import (request as req, cli,
     log, parallel
 )
@@ -68,18 +68,6 @@ def to_params(kwargs):
         setattr(params, k, v)
 
     return params
-
-def import_or_raise(package, name = None):
-    name = name or package
-
-    try:
-        import_handler(package)
-    except ImportError:
-        raise DependencyNotFoundError((
-            "Unable to import {package} for resolving dependencies. "
-            "fluxviz requires {package} to be installed. "
-            "Please install {package} by executing 'pip install {name}'."
-        ).format(package = package, name = name))
 
 def _command(*args, **kwargs):
     a = to_params(kwargs)

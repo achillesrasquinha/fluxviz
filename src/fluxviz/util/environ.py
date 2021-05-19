@@ -6,7 +6,7 @@ import fluxviz
 from   fluxviz.util.types 	import auto_typecast
 from   fluxviz._compat		import string_types
 
-PREFIX = "%s" % fluxviz.__name__.upper()
+PREFIX 	= "%s" % fluxviz.__name__.upper()
 
 def getenvvar(name, prefix = PREFIX, seperator = "_"):
 	if not prefix:
@@ -38,7 +38,7 @@ def value_to_envval(value):
 		elif value == False:
 			value = "false"
 		elif isinstance(value, int):
-			value = string_types(value)
+			value = str(value)
 		else:
 			raise TypeError("Unknown parameter type %s with value %r" % (value, type(value)))
 

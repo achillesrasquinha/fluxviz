@@ -81,4 +81,4 @@ def get_random_str():
     string  = str(uuid_)
     string  = string.replace("-", "")
 
-    return string 
+    return string

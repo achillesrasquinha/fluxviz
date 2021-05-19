@@ -7,30 +7,24 @@
 </div>
 
 <p align="center">
-    <a href="https://travis-ci.org/achillesrasquinha/fluxviz">
-        <img src="https://img.shields.io/travis/achillesrasquinha/fluxviz.svg?style=flat-square">
-    </a>
-    <a href="https://ci.appveyor.com/project/achillesrasquinha/fluxviz">
-        <img src="https://img.shields.io/appveyor/ci/achillesrasquinha/fluxviz.svg?style=flat-square&logo=appveyor">
-    </a>
-    <a href="https://coveralls.io/github/achillesrasquinha/fluxviz">
-        <img src="https://img.shields.io/coveralls/github/achillesrasquinha/fluxviz.svg?style=flat-square">
-    </a>
-    <a href="https://pypi.org/project/fluxviz/">
+  <a href="https://coveralls.io/github/achillesrasquinha/fluxviz">
+    <img src="https://img.shields.io/coveralls/github/achillesrasquinha/fluxviz.svg?style=flat-square">
+  </a>
+  <a href="https://pypi.org/project/fluxviz/">
 		<img src="https://img.shields.io/pypi/v/fluxviz.svg?style=flat-square">
 	</a>
-    <a href="https://pypi.org/project/fluxviz/">
+  <a href="https://pypi.org/project/fluxviz/">
 		<img src="https://img.shields.io/pypi/l/fluxviz.svg?style=flat-square">
 	</a>
-    <a href="https://pypi.org/project/fluxviz/">
+  <a href="https://pypi.org/project/fluxviz/">
 		<img src="https://img.shields.io/pypi/pyversions/fluxviz.svg?style=flat-square">
 	</a>
-    <a href="https://hub.docker.com/r/achillesrasquinha/fluxviz">
+  <a href="https://hub.docker.com/r/achillesrasquinha/fluxviz">
 		<img src="https://img.shields.io/docker/cloud/build/achillesrasquinha/fluxviz.svg?style=flat-square&logo=docker">
 	</a>
-    <a href="https://git.io/boilpy">
-      <img src="https://img.shields.io/badge/made%20with-boilpy-red.svg?style=flat-square">
-    </a>
+  <a href="https://git.io/boilpy">
+    <img src="https://img.shields.io/badge/made%20with-boilpy-red.svg?style=flat-square">
+  </a>
 	<a href="https://saythanks.io/to/achillesrasquinha">
 		<img src="https://img.shields.io/badge/Say%20Thanks-🦉-1EAEDB.svg?style=flat-square">
 	</a>
@@ -56,35 +50,6 @@
 ### Features
 
 ### Installation
-      <img src="https://img.shields.io/travis/achillesrasquinha/fluxviz.svg?style=flat-square">
-    </a>
-    <a href="https://coveralls.io/github/achillesrasquinha/fluxviz">
-      <img src="https://img.shields.io/coveralls/github/achillesrasquinha/fluxviz.svg?style=flat-square">
-    </a>
-    <a href="https://pypi.org/project/fluxviz/">
-      <img src="https://img.shields.io/pypi/v/fluxviz.svg?style=flat-square">
-    </a>
-    <a href="https://pypi.org/project/fluxviz/">
-      <img src="https://img.shields.io/pypi/l/fluxviz.svg?style=flat-square">
-    </a>
-    <a href="https://pypi.org/project/fluxviz/">
-		  <img src="https://img.shields.io/pypi/pyversions/fluxviz.svg?style=flat-square">
-	  </a>
-    <a href="https://git.io/boilpy">
-      <img src="https://img.shields.io/badge/made%20with-boilpy-red.svg?style=flat-square">
-    </a>
-</p>
-
-### Table of Contents
-* [Features](#features)
-* [Installation](#installation)
-* [Usage](#usage)
-* [License](#license)
-
-#### Features
-
-
-#### Installation
 
 ```shell
 $ pip install fluxviz
@@ -92,31 +57,11 @@ $ pip install fluxviz
 
 ### Usage
 
-#### Basic Usage
-
-### Docker
-
-```
-$ docker run \
-    --rm \
-    -it \
-    -v $(pwd):/path/to/project \
-      achillesrasquinha/fluxviz \
-```
-
-### Similar Packages
-
-* [d3flux](https://github.com/pstjohn/d3flux)
-
-### License
-#### Usage
-
 ##### Application Interface
 
 ```python
 >>> import fluxviz
 ```
-
 
 ##### Command-Line Interface
 
@@ -135,8 +80,21 @@ Commands:
   version  Show version and exit.
 ```
 
+### Docker
 
-#### License
+```
+$ docker run \
+    --rm \
+    -it \
+    -v $(pwd):/path/to/project \
+      achillesrasquinha/fluxviz \
+```
+
+### Similar Packages
+
+* [d3flux](https://github.com/pstjohn/d3flux)
+
+### License
 
 This repository has been released under the [MIT License](LICENSE).
 

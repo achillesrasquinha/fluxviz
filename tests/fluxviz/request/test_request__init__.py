@@ -5,8 +5,7 @@ from fluxviz._compat import HTTPError
 import pytest
 
 # imports - standard imports
-from fluxviz         import request as req
-from fluxviz._compat import string_types
+from fluxviz import request as req
 
 def test_get():
     res  = req.get("https://httpbin.org/get")
@@ -25,7 +24,7 @@ def test_get():
     with pytest.raises(HTTPError):
         res.raise_for_status()
 
-    assert string_types(res) == "<Response [{code}]>".format(
+    assert str(res) == "<Response [{code}]>".format(
         code = 404
     )
 
@@ -46,6 +45,6 @@ def test_post():
     with pytest.raises(HTTPError):
         res.raise_for_status()
 
-    assert string_types(res) == "<Response [{code}]>".format(
+    assert str(res) == "<Response [{code}]>".format(
         code = 404
     )

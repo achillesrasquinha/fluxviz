@@ -10,14 +10,13 @@ from testutils import PATH
 # imports - module imports
 from fluxviz.util.system import (read, write, popen, which, makedirs,
     touch, check_gzip)
-from fluxviz._compat import string_types
 
 def test_read(tmpdir):
     directory = tmpdir.mkdir("tmp")
     tempfile  = directory.join("foobar.txt")
     tempfile.write("foobar")
 
-    assert tempfile.read() == read(string_types(tempfile))
+    assert tempfile.read() == read(str(tempfile))
 
     tempfile  = directory.join("barfoo.txt")
     tempfile.write(\
@@ -28,13 +27,13 @@ def test_read(tmpdir):
         """
     )
 
-    assert tempfile.read() == read(string_types(tempfile))
+    assert tempfile.read() == read(str(tempfile))
 
 def test_write(tmpdir):
     directory   = tmpdir.mkdir("tmp")
     tempfile    = directory.join("foobar.txt")
     
-    path        = string_types(tempfile) 
+    path        = str(tempfile) 
     
     prev, next_ = "foobar", "barfoo"
 
@@ -50,7 +49,7 @@ def test_write(tmpdir):
 @pytest.mark.skipif(os.name == "nt", reason = "requires a UNIX-based OS to run on.")
 def test_popen(tmpdir):
     directory = tmpdir.mkdir("tmp")
-    dirpath   = string_types(directory)
+    dirpath   = str(directory)
 
     string    = "Hello, World!"
 
@@ -93,7 +92,7 @@ def test_which():
 
 def test_makedirs(tmpdir):
     directory = tmpdir.mkdir("tmp")
-    path      = osp.join(string_types(directory), "foo", "bar")
+    path      = osp.join(str(directory), "foo", "bar")
 
     makedirs(path)
     assert osp.exists(path)
@@ -106,7 +105,7 @@ def test_makedirs(tmpdir):
 
 def test_touch(tmpdir):
     directory = tmpdir.mkdir("tmp")
-    path      = osp.join(string_types(directory), "foo")
+    path      = osp.join(str(directory), "foo")
 
     assert not osp.exists(path)
 
