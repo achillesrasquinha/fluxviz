@@ -20,9 +20,21 @@ from fluxviz.util.system    import remove
 from fluxviz.constant       import PATH
 from fluxviz._compat        import iterkeys
 
+def patch_model(model):
+    if "species" in model:
+        model["metabolites"] = model.pop("species")
+
+    for i, reaction in enumerate(model["reactions"]):
+        if "stoichiometry" in reaction:
+            model["reactions"][i]["metabolites"] = model["reactions"][i].pop("stoichiometry")
+
+    return model
+
 def plot(model):
     if not isinstance(model, collections.Mapping):
         model = model_to_dict(model)
+
+    model = patch_model(model)
     
     json_ = json.dumps(model)
 

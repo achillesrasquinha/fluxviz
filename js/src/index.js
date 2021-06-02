@@ -16,13 +16,13 @@ import ccNetViz from "ccnetviz";
 import randomColor from "randomcolor";
 import deepmerge from "deepmerge";
 
-import metabolitePositions from "./position.json"
+// import metabolitePositions from "./position.json"
 
 const fluxviz = {
 	util: {
 		array: { }
 	},
-	ENVIRONMENT: ""
+	ENVIRONMENT: process.env.FLUXVIZ_ENVIRONMENT || "development"
 };
 
 /**
@@ -130,7 +130,6 @@ fluxviz.Logger.ERROR  = { value: 40, color: '#F44336', name: 'ERROR'  }
 fluxviz.Logger.NOTSET = { value:  0,                   name: 'NOTSET' }
 
 fluxviz.logger        = fluxviz.Logger.get('fluxviz');
-fluxviz.logger.level  = fluxviz.Logger.DEBUG;
 
 const get_element_id = name => {
 		const prefix = "fluxviz-$id-";
@@ -278,7 +277,7 @@ const patch_model = model => {
 			[c]: _objectify(compartment_ids, c => ({ [c]: [ ] })) 
 		}));
 
-		let subsystems 							= [ ];
+		let subsystems 				= [ ];
 		const subsystem_metabolites = { };
 		const subsystem_reactions 	= { };
 
@@ -299,7 +298,7 @@ const patch_model = model => {
 
 		for ( let i = 0, a = model.reactions.length ; i < a ; ++i ) {
 				const reaction		 	= model.reactions[i];
-				const compartments 	= [ ];
+				const compartments 		= [ ];
 
 				const metabolites		= Object.keys(reaction.metabolites);
 
@@ -365,7 +364,7 @@ const patch_model = model => {
 
 				for ( let k = 0, c = compartment_ids.length ; k < c ; ++k ) {
 					const compartment_id 	= compartment_ids[k];
-					const contains				= reaction_compartments_map[compartment_id];
+					const contains			= reaction_compartments_map[compartment_id];
 
 					for ( let l = 0, d = reaction_compartments.length ; l < d ; ++l ) {
 						const compartment 	= reaction_compartments[l];
@@ -412,7 +411,7 @@ const patch_model = model => {
 		
 		fluxviz.logger.warn("Patching Compartments...");
 		for ( let i = 0, a = compartment_ids.length ; i < a ; ++i ) {
-				const compartment			= compartment_ids[i];
+				const compartment	  = compartment_ids[i];
 				const name            = model.compartments[compartment] || compartment;
 
 				const n_metabolites   = compartment_metabolite_count[compartment];
@@ -474,7 +473,7 @@ const patch_model = model => {
 		const max_reactions = Math.max.apply(null, subsystems.map(s => s.reactions.length))
 
 		for ( let i = 0, n = subsystems.length ; i < n ; ++i ) {
-				const subsystem							= subsystems[i];
+				const subsystem				= subsystems[i];
 				const reaction_density     	= subsystem.reactions.length / max_reactions;
 				subsystem.reaction_density  = reaction_density;
 
@@ -498,20 +497,20 @@ const get_metabolite_nodes_and_reaction_edges = (metabolites, reactions) => {
 						style: "metabolite-compartment-" + m.compartment,
 						object: m };
 
-				if ( m.id in metabolitePositions ) {
-					const positions = metabolitePositions[m.id];
+				// if ( m.id in metabolitePositions ) {
+				// 	const positions = metabolitePositions[m.id];
 
-					if ( positions ) {
-						let position = positions[0];
-						let [x, y] = position;
+				// 	if ( positions ) {
+				// 		let position = positions[0];
+				// 		let [x, y] = position;
 						
-						x = x / 1441;
-						y = y / 933;
+				// 		x = x / 1441;
+				// 		y = y / 933;
 
-						node.x = x;
-						node.y = y;
-					}
-				}
+				// 		node.x = x;
+				// 		node.y = y;
+				// 	}
+				// }
 
 				nodes.metabolites[m.id] = node;
 		}
@@ -739,8 +738,8 @@ export const render = async (element, model, { styles = { } } = { }) => {
 										label: subsystem.name,
 										type: type,
 										style: "subsystem-" + subsystem.name,
-										nodes: Object.values(result.nodes), edges: result.edges,
-										x: Math.random(), y: Math.random() };
+										nodes: Object.values(result.nodes), edges: result.edges };
+										// x: Math.random(), y: Math.random() };
 	
 								return node;
 							}
@@ -769,8 +768,8 @@ export const render = async (element, model, { styles = { } } = { }) => {
 							_id: `compartment:${next}`,
 							label: compartment.name,
 							style: "compartment-" + next, 
-							nodes: nodes, edges: edges, type: type, notes: notes,
-							x: Math.random(), y: Math.random() };
+							nodes: nodes, edges: edges, type: type, notes: notes }
+							// x: Math.random(), y: Math.random() };
 	
 					return { [next]: node };
 			}),
@@ -899,7 +898,7 @@ export const render = async (element, model, { styles = { } } = { }) => {
 		}
 
 		const drawGraph = async (graph, nodes, edges, layout, options) => {
-				await setGraph(graph, nodes, edges, null, options);
+				await setGraph(graph, nodes, edges, layout, options);
 				fluxviz.logger.warn("Rendering graph...");
 				graph.draw();
 		}

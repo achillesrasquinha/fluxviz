@@ -1,7 +1,23 @@
 {
+  "name": "fluxviz",
+  "version": "0.1.0",
+  "main": "./js/dist/fluxviz.js",
+  "dependencies": {
+    "ccnetviz": "^1.0.19",
+    "deepmerge": "^4.2.2",
+    "randomcolor": "^0.6.2",
+    "webpack": "^5.37.0"
+  },
+  "scripts": {
+    "clean": "rm -rf ./dist/fluxviz*.js",
+    "build:development": "yarn clean && webpack --mode development",
+    "build": "yarn build:development",
+    "lint": "$(yarn bin)/eslint ./js/src"
+  },
   "devDependencies": {
-    "@babel/cli": "^7.13.16",
-    "@babel/core": "^7.14.2",
-    "@babel/preset-env": "^7.14.2"
+    "@babel/core": "^7.14.3",
+    "@babel/preset-env": "^7.14.2",
+    "eslint": "^7.26.0",
+    "webpack-cli": "^4.7.0"
   }
 }

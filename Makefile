@@ -32,7 +32,7 @@ PRECOMMIT				= ${VENVBIN}pre-commit
 SPHINXBUILD				= ${VENVBIN}sphinx-build
 TWINE					= ${VENVBIN}twine
 
-SQLITE					= sqlite
+SQLITE				   ?= sqlite
 
 JOBS				   ?= $(shell $(PYTHON) -c "import multiprocessing as mp; print(mp.cpu_count())")
 PYTHON_ENVIRONMENT      = $(shell $(PYTHON) -c "import sys;v=sys.version_info;print('py%s%s'%(v.major,v.minor))")
@@ -79,7 +79,7 @@ requirements: ## Build Requirements
 	@cat $(BASEDIR)/requirements/production.txt  > $(BASEDIR)/requirements.txt
 
 install-js: ## Install JS dependencies.
-	cd $(JSSRCDIR); yarn install; cd $(BASEDIR)
+	yarn install
 
 install: clean info requirements install-js ## Install dependencies and module.
 ifneq (${VERBOSE},true)

@@ -16,7 +16,10 @@ logger   = log.get_logger()
 
 JOBS = [
     {
-        "name": "bigg_connector"
+        "name": "connectors.bigg"
+    },
+    {
+        "name": "connectors.kegg"
     },
     {
         "name": "build_pathway_info",

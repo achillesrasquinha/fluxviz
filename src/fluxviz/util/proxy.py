@@ -6,6 +6,7 @@ import csv
 from fluxviz.config      import PATH
 from fluxviz.db          import get_connection
 from fluxviz.util.system import popen
+from fluxviz.util.array  import sequencify
 from fluxviz.exception   import PopenError
 from fluxviz import log, db
 
@@ -52,18 +53,22 @@ def fetch():
 def to_addr(proxy):
     return "%s:%s" % (proxy["host"], str(proxy["port"]))
 
-def get_random_proxy(secure = False, error_rate = 0.5, avg_resp_time = 0.5):
+def get_random_proxy(secure = False, error_rate = 0.5, avg_resp_time = 0.5, port = None):
     db      = get_connection()
     where   = "secure = %s and error_rate <= %s and average_response_time <= %s" % (int(secure), error_rate,
         avg_resp_time)
 
+    if port:
+        port = " and port in %s" % sequencify(port)
+
     result  = db.query("SELECT * FROM `tabProxies` WHERE %s ORDER BY RANDOM() LIMIT 1" % where)
+    print(result)
 
     if result:
         return to_addr(result)
 
-def get_random_requests_proxies():
+def get_random_requests_proxies(*args, **kwargs):
     return {
-        "http": get_random_proxy(),
+        "http": get_random_proxy(*args, **kwargs),
         # "https": get_random_proxy(secure = True)
     }
