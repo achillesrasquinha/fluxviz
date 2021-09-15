@@ -1,12 +1,19 @@
+from os import path
+import os.path as osp
 import re
+import gzip
 
 # from fluxviz import request as req
 import requests as req
 
-from fluxviz.util.proxy     import get_random_requests_proxies
+from fluxviz.util.system    import popen, PopenError
+from fluxviz.util.proxy     import get_random_proxy, fetch as fetch_proxies
 from fluxviz.util.array     import sequencify
 from fluxviz.util.string    import strip
+from fluxviz.util.environ   import getenv
 from fluxviz.log            import get_logger
+from fluxviz._compat        import iterkeys
+from fluxviz.constant       import PATH
 
 logger = get_logger()
 
@@ -22,7 +29,7 @@ class BaseAPI:
 
     def request(self, method, url, *args, **kwargs):
         prefix   = kwargs.pop("prefix", True)
-
+        
         if prefix:
             url  = self.build_url(url)
 
@@ -39,7 +46,7 @@ class BaseAPI:
         return response
 
     def get(self, url, *args, **kwargs):
-        return self.request("GET", url, *args, **kwargs)
+        return self.request(method = "GET", url = url, *args, **kwargs)
 
 class KEGG(BaseAPI):
     BASE_URL = "http://rest.kegg.jp"
@@ -50,14 +57,13 @@ class KEGG(BaseAPI):
 
     def get(self, id_):
         content = self.super.get("get/%s" % id_)
-        
         return content
 
     def list(self, type_):
-        url      = self.build_url("list/%s" % type_)
+        parts    = "list/%s" % type_
+        url      = self.build_url(parts)
 
-        content  = self.super.get(url = "list/%s" % type_,
-            headers = { "Referer": url }, prefix = False)
+        content  = self.super.get(url = parts, headers = { "Referer": url })
         
         lines    = content.split("\n")
 
@@ -74,18 +80,26 @@ class KEGG(BaseAPI):
         return data
 
 def run(*args, **kwargs):
-    kegg        = KEGG(proxies = get_random_requests_proxies)
+    # fetch_proxies()
+
+    # kegg        = KEGG(proxies = lambda: { "http": get_random_proxy() })
+    kegg        = KEGG()
 
     compounds   = kegg.list("compound")
-    # reactions   = kegg.list("reaction")
+    reactions   = kegg.list("reaction")
 
-    # for reaction in iterkeys(reactions):
-    #     pass
+    for compound in iterkeys(compounds):
+        content = kegg.get(compound)
+        
+        # if not osp.exists(content):
+        #     print(content)
 
-    # for compound in iterkeys(compounds):
-    #     pass
+    for reaction in iterkeys(reactions):
+        content = kegg.get(reaction)
+        print(content)
+        break
 
-    print(get_random_requests_proxies())
+    # print(get_random_requests_proxies())
 
     # response = proxy_request("GET", "http://bigg.ucsd.edu/static/namespace/bigg_models_metabolites.txt")
     # response.raise_for_status()

@@ -16,7 +16,7 @@ from cobra.io.json      import model_to_dict
 # imports - module imports
 from fluxviz.template       import render_template
 from fluxviz.util.string    import get_random_str
-from fluxviz.util.system    import remove 
+from fluxviz.util.system    import remove
 from fluxviz.constant       import PATH
 from fluxviz._compat        import iterkeys
 

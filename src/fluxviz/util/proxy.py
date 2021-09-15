@@ -62,13 +62,12 @@ def get_random_proxy(secure = False, error_rate = 0.5, avg_resp_time = 0.5, port
         port = " and port in %s" % sequencify(port)
 
     result  = db.query("SELECT * FROM `tabProxies` WHERE %s ORDER BY RANDOM() LIMIT 1" % where)
-    print(result)
 
     if result:
         return to_addr(result)
 
 def get_random_requests_proxies(*args, **kwargs):
     return {
-        "http": get_random_proxy(*args, **kwargs),
+        "http":  get_random_proxy(),
         # "https": get_random_proxy(secure = True)
     }
