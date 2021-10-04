@@ -66,7 +66,7 @@ __version__                 = read(osp.join(pardir(__file__), "VERSION"))
 __build__                   = get_revision(pardir(__file__, 2), short = True, raise_err = False)
 __author__                  = "Achilles Rasquinha"
 __email__                   = "achillesrasquinha@gmail.com"
-__description__             = "An visualizer for metabolic pathways"
-__keywords__                = ['sbml', 'visualizer']
+__description__             = "An SBML Visualizer"
+__keywords__                = ['sbml', 'visualizer', 'converter']
 __url__                     = "https://github.com/achillesrasquinha/fluxviz"
 __license__                 = "MIT License"

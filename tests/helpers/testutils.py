@@ -1,6 +1,6 @@
 # imports - compatibility imports
-from fluxviz.util.system import popen, pardir
-from fluxviz.util.string import safe_decode
+from bpyutils.util.system import popen, pardir
+from bpyutils.util.string import safe_decode
 from fluxviz._compat     import StringIO, EX_OK, input
 
 # imports - standard imports

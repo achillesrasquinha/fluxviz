@@ -1,7 +1,7 @@
 import os, os.path as osp
 
 import fluxviz
-from   fluxviz.util.system import makedirs
+from   bpyutils.util.system import makedirs
 
 class Cache:
     def __init__(self, location = None, dirname = None):

@@ -26,7 +26,9 @@ PYTEST				   ?= ${VENVBIN}pytest
 TOX						= ${VENVBIN}tox
 COVERALLS			   ?= ${VENVBIN}coveralls
 IPYTHON					= ${VENVBIN}ipython
+
 JUPYTER					= ${VENVBIN}jupyter
+
 SAFETY					= ${VENVBIN}safety
 PRECOMMIT				= ${VENVBIN}pre-commit
 SPHINXBUILD				= ${VENVBIN}sphinx-build
@@ -119,6 +121,7 @@ ifneq (${ENVIRONMENT},test)
 		$(BASEDIR)/.tox \
 		$(BASEDIR)/*.coverage \
 		$(BASEDIR)/*.coverage.* \
+		$(BASEDIR)/.coverage.* \
 		$(BASEDIR)/htmlcov \
 		$(BASEDIR)/dist \
 		$(BASEDIR)/build \

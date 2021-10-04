@@ -16,7 +16,3 @@ CREATE TABLE IF NOT EXISTS `tabProxies` (
     UNIQUE(`host`, `port`, `secure`, `anonymity`, `country_code`, `available`, `error_rate`,
         `average_response_time`)
 );
-
--- CREATE TABLE IF NOT EXISTS `tabSpecies` (
-
--- );

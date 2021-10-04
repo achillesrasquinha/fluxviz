@@ -10,13 +10,14 @@ from   functools import partial
 import traceback
 
 from fluxviz.commands.util 	import cli_format
-from fluxviz.util.array    	import flatten, sequencify
-from fluxviz.util._dict     import merge_dict
-from fluxviz.util.system   	import (read, write, touch, popen, which)
-from fluxviz.util.environ  	import getenvvar
-from fluxviz.util.datetime 	import get_timestamp_str
-from fluxviz.util.imports   import import_or_raise
-from fluxviz 		      	import (request as req, cli,
+from bpyutils.util.array    	import flatten, sequencify
+from bpyutils.util._dict        import merge_dict
+from bpyutils.util.system   	import (read, write, touch, popen, which)
+from bpyutils.util.environ  	import getenvvar
+from bpyutils.util.datetime 	import get_timestamp_str
+from bpyutils.util.imports      import import_or_raise
+from bpyutils import request as req
+from fluxviz 		      	import (cli,
     log, parallel
 )
 from fluxviz._compat		import builtins, iteritems

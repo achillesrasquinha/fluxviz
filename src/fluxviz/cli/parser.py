@@ -11,10 +11,10 @@ from fluxviz.__attr__     import (
     __description__,
     __command__
 )
-from fluxviz.util.environ  import getenv
-from fluxviz.cli           import util as _cli
-from fluxviz.cli.formatter import ArgumentParserFormatter
-from fluxviz.cli.util      import _CAN_ANSI_FORMAT
+from bpyutils.util.environ    import getenv
+from bpyutils.cli             import util as _cli
+from bpyutils.cli.formatter   import ArgumentParserFormatter
+from bpyutils.cli.util        import _CAN_ANSI_FORMAT
 
 _DESCRIPTION_JUMBOTRON = \
 """

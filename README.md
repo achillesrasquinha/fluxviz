@@ -3,6 +3,7 @@
   <h1>
       fluxviz
   </h1>
+<<<<<<< HEAD
   <h4>A visualizer for metabolic pathways</h4>
 </div>
 
@@ -50,20 +51,70 @@
 ### Features
 
 ### Installation
+=======
+  <h4>An SBML Visualizer</h4>
+</div>
+
+<p align="center">
+    
+    <a href='https://github.com/achillesrasquinha/fluxviz//actions?query=workflow:"Continuous Integration"'>
+      <img src="https://img.shields.io/github/workflow/status/achillesrasquinha/fluxviz/Continuous Integration?style=flat-square">
+    </a>
+    <a href="https://coveralls.io/github/achillesrasquinha/fluxviz">
+      <img src="https://img.shields.io/coveralls/github/achillesrasquinha/fluxviz.svg?style=flat-square">
+    </a>
+    <a href="https://pypi.org/project/fluxviz/">
+      <img src="https://img.shields.io/pypi/v/fluxviz.svg?style=flat-square">
+    </a>
+    <a href="https://pypi.org/project/fluxviz/">
+      <img src="https://img.shields.io/pypi/l/fluxviz.svg?style=flat-square">
+    </a>
+    <a href="https://pypi.org/project/fluxviz/">
+		  <img src="https://img.shields.io/pypi/pyversions/fluxviz.svg?style=flat-square">
+	  </a>
+    <a href="https://git.io/boilpy">
+      <img src="https://img.shields.io/badge/made%20with-boilpy-red.svg?style=flat-square">
+    </a>
+</p>
+
+### Table of Contents
+* [Features](#features)
+* [Quick Start](#quick-start)
+* [Usage](#usage)
+* [License](#license)
+
+### Features
+* Python 2.7+ and Python 3.4+ compatible.
+
+### Quick Start
+>>>>>>> template/master
 
 ```shell
 $ pip install fluxviz
 ```
 
+<<<<<<< HEAD
 ### Usage
 
 ##### Application Interface
+=======
+Check out [installation](docs/source/installation.md) for more details.
+
+### Usage
+
+#### Application Interface
+>>>>>>> template/master
 
 ```python
 >>> import fluxviz
 ```
 
+<<<<<<< HEAD
 ##### Command-Line Interface
+=======
+
+#### Command-Line Interface
+>>>>>>> template/master
 
 ```console
 $ fluxviz
@@ -80,6 +131,7 @@ Commands:
   version  Show version and exit.
 ```
 
+<<<<<<< HEAD
 ### Docker
 
 ```
@@ -93,6 +145,8 @@ $ docker run \
 ### Similar Packages
 
 * [d3flux](https://github.com/pstjohn/d3flux)
+=======
+>>>>>>> template/master
 
 ### License
 

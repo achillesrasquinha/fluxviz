@@ -1,5 +1,5 @@
-from fluxviz.util.array   import sequencify
-from fluxviz.util.imports import import_handler
+from bpyutils.util.array   import sequencify
+from bpyutils.util.imports import import_handler
 
 # imports - module imports
 from fluxviz.cli.parser import get_args

@@ -52,4 +52,8 @@ def test_echo(capfd, tmpdir):
 
     f = tmpdir.join("tmp")
     cli.echo(query, nl = True, file = str(f))
+<<<<<<< HEAD
     assert f.read() == "foobar\n"
+=======
+    assert f.read() == "foobar\n"
+>>>>>>> template/master

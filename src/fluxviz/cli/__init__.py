@@ -1,8 +1,8 @@
 # imports - module imports
-from fluxviz.cli.util   import *
+from bpyutils.cli.util     import *
 from fluxviz.cli.parser import get_args
-from fluxviz.util._dict import merge_dict
-from fluxviz.util.types import get_function_arguments
+from bpyutils.util._dict   import merge_dict
+from bpyutils.util.types   import get_function_arguments
 
 def command(fn):
     args    = get_args()
