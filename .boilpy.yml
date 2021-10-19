@@ -19,7 +19,7 @@ default_context:
   repo_service: "https://github.com"
   repo_service_username: "achillesrasquinha"
   repo_service_reponame: "fluxviz"
-  docker_service_username: "achillesrasquinha@gmail.com"
+  docker_service_username: "achillesrasquinha"
   docker_service_reponame: "fluxviz"
   github_action: "n"
   ml: "n"
