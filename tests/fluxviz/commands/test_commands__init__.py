@@ -3,8 +3,13 @@ import os.path as osp
 # imports - compatibility imports
 from fluxviz.commands    import _command as command
 <<<<<<< HEAD
+<<<<<<< HEAD
 from fluxviz.util._dict  import merge_dict
 from fluxviz.util.string import strip_ansi
+=======
+from bpyutils.util._dict  import merge_dict
+from bpyutils.util.string import strip_ansi
+>>>>>>> template/master
 =======
 from bpyutils.util._dict  import merge_dict
 from bpyutils.util.string import strip_ansi

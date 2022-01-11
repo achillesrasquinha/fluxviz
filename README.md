@@ -4,6 +4,7 @@
       fluxviz
   </h1>
 <<<<<<< HEAD
+<<<<<<< HEAD
   <h4>A visualizer for metabolic pathways</h4>
 </div>
 
@@ -52,11 +53,16 @@
 
 ### Installation
 =======
+=======
+>>>>>>> template/master
   <h4>An SBML Visualizer</h4>
 </div>
 
 <p align="center">
+<<<<<<< HEAD
     
+=======
+>>>>>>> template/master
     <a href='https://github.com/achillesrasquinha/fluxviz//actions?query=workflow:"Continuous Integration"'>
       <img src="https://img.shields.io/github/workflow/status/achillesrasquinha/fluxviz/Continuous Integration?style=flat-square">
     </a>
@@ -87,6 +93,9 @@
 * Python 2.7+ and Python 3.4+ compatible.
 
 ### Quick Start
+<<<<<<< HEAD
+>>>>>>> template/master
+=======
 >>>>>>> template/master
 
 ```shell
@@ -94,15 +103,21 @@ $ pip install fluxviz
 ```
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 ### Usage
 
 ##### Application Interface
 =======
+=======
+>>>>>>> template/master
 Check out [installation](docs/source/installation.md) for more details.
 
 ### Usage
 
 #### Application Interface
+<<<<<<< HEAD
+>>>>>>> template/master
+=======
 >>>>>>> template/master
 
 ```python
@@ -110,7 +125,12 @@ Check out [installation](docs/source/installation.md) for more details.
 ```
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 ##### Command-Line Interface
+=======
+
+#### Command-Line Interface
+>>>>>>> template/master
 =======
 
 #### Command-Line Interface
@@ -132,6 +152,7 @@ Commands:
 ```
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 ### Docker
 
 ```
@@ -145,6 +166,8 @@ $ docker run \
 ### Similar Packages
 
 * [d3flux](https://github.com/pstjohn/d3flux)
+=======
+>>>>>>> template/master
 =======
 >>>>>>> template/master
 

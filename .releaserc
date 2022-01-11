@@ -1,5 +1,4 @@
 {
-<<<<<<< HEAD
     "plugins": [
         "@semantic-release/commit-analyzer",
         "@semantic-release/release-notes-generator",
@@ -9,9 +8,8 @@
         ["@semantic-release/git", {
              "assets": "src/fluxviz/VERSION",
             "message": "chore(release): Bumped to Version ${nextRelease.version}\n\n${nextRelease.notes}" 
-        }],
-=======
->>>>>>> template/master
+        }]
+    ],
     "release": {
         "prepare": [{
             "path": "@semantic-release/exec",

@@ -1,14 +1,14 @@
 # imports - standard imports
 import subprocess as sp
 
-class FluxVizError(Exception):
+class FluxvizError(Exception):
     pass
 
-class PopenError(FluxVizError, sp.CalledProcessError):
-    pass
-
-class TemplateNotFoundError(FluxVizError):
+class PopenError(FluxvizError, sp.CalledProcessError):
     pass
 
 class DependencyNotFoundError(ImportError):
+    pass
+
+class TemplateNotFoundError(FluxvizError):
     pass

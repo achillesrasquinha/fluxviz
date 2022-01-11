@@ -6,7 +6,7 @@ import subprocess
 
 PY2 = sys.version_info.major == 2
 
-if PY2:
+if PY2:    
     FileNotFoundError = OSError
 
 def read(fname):

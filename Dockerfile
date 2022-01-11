@@ -12,9 +12,10 @@ RUN apk add --no-cache \
 COPY . $FLUXVIZ_PATH
 COPY ./docker/entrypoint.sh /entrypoint.sh
 
-RUN pip install $FLUXVIZ_PATH
-
 WORKDIR $FLUXVIZ_PATH
+
+RUN pip install -r ./requirements.txt && \
+    python setup.py install
 
 ENTRYPOINT ["/entrypoint.sh"]
 

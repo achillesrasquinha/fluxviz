@@ -1,3 +1,3 @@
 scipy
 cobra
-bpyutils
+git+git://github.com/achillesrasquinha/bpyutils.git@develop#egg=bpyutils

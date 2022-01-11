@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 
@@ -17,12 +18,20 @@ from fluxviz.exception   import (
     FluxvizError,
 >>>>>>> template/master
     PopenError
+=======
+
+
+# imports - module imports
+from fluxviz.exception import (
+    FluxvizError
+>>>>>>> template/master
 )
 
 # imports - test imports
 import pytest
 
 def test_fluxviz_error():
+<<<<<<< HEAD
 <<<<<<< HEAD
     with pytest.raises(FluxVizError):
         raise FluxVizError
@@ -49,4 +58,8 @@ def test_popen_error():
         (FluxvizError, sp.CalledProcessError)
     )
     assert isinstance(FluxvizError(), Exception)
+>>>>>>> template/master
+=======
+    with pytest.raises(FluxvizError):
+        raise FluxvizError
 >>>>>>> template/master

@@ -10,9 +10,9 @@ PROJECT					= fluxviz
 PROJDIR					= ${BASEDIR}/src/fluxviz
 TESTDIR					= ${BASEDIR}/tests
 DOCSDIR					= ${BASEDIR}/docs
+
 NOTEBOOKSDIR			= ${DOCSDIR}/source/notebooks
 
-JSSRCDIR				= ${BASEDIR}/js
 
 PYTHONPATH		 	   ?= python
 
@@ -25,6 +25,7 @@ PIP					   ?= ${VENVBIN}pip
 PYTEST				   ?= ${VENVBIN}pytest
 TOX						= ${VENVBIN}tox
 COVERALLS			   ?= ${VENVBIN}coveralls
+DOCSTR_COVERAGE		   ?= ${VENVBIN}docstr-coverage
 IPYTHON					= ${VENVBIN}ipython
 
 JUPYTER					= ${VENVBIN}jupyter
@@ -32,9 +33,14 @@ JUPYTER					= ${VENVBIN}jupyter
 SAFETY					= ${VENVBIN}safety
 PRECOMMIT				= ${VENVBIN}pre-commit
 SPHINXBUILD				= ${VENVBIN}sphinx-build
+SPHINXAUTOBUILD			= ${VENVBIN}sphinx-autobuild
 TWINE					= ${VENVBIN}twine
 
+DOCKER_IMAGE		   ?= ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/${PROJECT}
+
+
 SQLITE				   ?= sqlite
+
 
 JOBS				   ?= $(shell $(PYTHON) -c "import multiprocessing as mp; print(mp.cpu_count())")
 PYTHON_ENVIRONMENT      = $(shell $(PYTHON) -c "import sys;v=sys.version_info;print('py%s%s'%(v.major,v.minor))")
@@ -94,9 +100,9 @@ endif
 
 	$(call log,INFO,Installing Requirements)
 ifeq (${ENVIRONMENT},test)
-	$(PIP) install -r $(BASEDIR)/requirements-test.txt $(OUT)
+	$(PIP) install -r $(BASEDIR)/requirements-test.txt $(PIP_ARGS) $(OUT)
 else
-	$(PIP) install -r $(BASEDIR)/requirements-dev.txt  $(OUT)
+	$(PIP) install -r $(BASEDIR)/requirements-dev.txt  $(PIP_ARGS) $(OUT)
 endif
 
 	$(call log,INFO,Installing ${PROJECT} (${ENVIRONMENT}))
@@ -143,6 +149,9 @@ endif
 
 	$(PYTEST) -s -n $(JOBS) --cov $(PROJDIR) $(IARGS) -vv $(ARGS)
 
+doc-coverage: install ## Display documentation coverage.
+	$(DOCSTR_COVERAGE) $(PROJDIR)
+
 ifeq (${ENVIRONMENT},development)
 	$(call browse,file:///${BASEDIR}/htmlcov/index.html)
 endif
@@ -182,6 +191,7 @@ endif
 			--inplace 			\
 			--execute 			\
 			--ExecutePreprocessor.timeout=300
+	
 
 	$(call log,INFO,Building Documentation)
 	$(SPHINXBUILD) $(DOCSDIR)/source $(DOCSDIR)/build $(OUT)
@@ -195,7 +205,10 @@ endif
 docker-build: clean ## Build the Docker Image.
 	$(call log,INFO,Building Docker Image)
 
-	@docker build $(BASEDIR) --tag $(DOCKER_HUB_USERNAME)/$(PROJECT) $(DOCKER_BUILD_ARGS)
+	@docker build $(BASEDIR) --tag $(DOCKER_IMAGE) $(DOCKER_BUILD_ARGS)
+
+docker-push: ## Push Docker Image to Registry.
+	@docker push $(DOCKER_IMAGE)$(DOCKER_IMAGE_TAG)
 
 docker-tox: clean ## Test using Docker Tox Image.
 	$(call log,INFO,Running Tests using Docker Tox)
@@ -227,8 +240,10 @@ endif
 start: ## Start app.
 	$(PYTHON) -m flask run
 
+
 notebooks: ## Launch Notebooks
 	$(JUPYTER) notebook --notebook-dir $(NOTEBOOKSDIR) $(ARGS)
+
 
 help: ## Show help and exit.
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)

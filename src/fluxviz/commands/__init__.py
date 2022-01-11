@@ -16,13 +16,11 @@ from bpyutils.util.system   	import (read, write, touch, popen, which)
 from bpyutils.util.environ  	import getenvvar
 from bpyutils.util.datetime 	import get_timestamp_str
 from bpyutils.util.imports      import import_or_raise
-from bpyutils import request as req
-from fluxviz 		      	import (cli,
-    log, parallel
-)
-from fluxviz._compat		import builtins, iteritems
+from bpyutils.config			import environment
+from bpyutils import request as req, log, parallel
+from fluxviz  import cli
+from bpyutils._compat		import builtins, iteritems
 from fluxviz.__attr__      	import __name__
-from fluxviz.config			import environment
 from fluxviz.exception      import DependencyNotFoundError
 
 logger   = log.get_logger(level = log.DEBUG)
